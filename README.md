@@ -21,7 +21,7 @@ IT-IT is a desktop automation suite that streamlines day-to-day IT operations su
 
 ## Getting Started
 1. Ensure Python 3.10+ is installed on the workstation.
-2. Install dependencies (requires Windows for Outlook automation via `pywin32`):
+2. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
@@ -31,11 +31,6 @@ IT-IT is a desktop automation suite that streamlines day-to-day IT operations su
    python app.py
    ```
 5. Use the **Settings** button within the app to adjust configuration values without editing JSON directly.
-
-## Runtime Dependencies
-- `pandas` – Data wrangling for Excel imports/exports and tabular normalization across workflows.
-- `openpyxl` – Reading and writing SAP and telecom Excel workbooks.
-- `pywin32` – Automating Outlook to generate workflow-specific emails (Windows only).
 
 ## Contributing
 For internal teams, please:
