@@ -181,16 +181,25 @@ def apply_dark_tech_palette(app: QtWidgets.QApplication) -> None:
             color: {TEXT_PRIMARY};
         }}
         QScrollBar:vertical {{
-            background: {BASE_BG};
-            width: 10px;
-            margin: 0px 0px 0px 0px;
+            background: transparent;
+            width: 0px;
+            margin: 0px;
         }}
         QScrollBar::handle:vertical {{
-            background: {ACCENT_SOFT};
-            border-radius: 4px;
+            background: transparent;
+            border-radius: 0px;
         }}
         QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
             background: none;
+            height: 0px;
+        }}
+        QScrollBar:horizontal {{
+            background: transparent;
+            height: 0px;
+            margin: 0px;
+        }}
+        QScrollBar::handle:horizontal {{
+            background: transparent;
         }}
         QLabel[role='caption'] {{
             color: {TEXT_MUTED};
@@ -898,17 +907,61 @@ class AgileCreationDialog(QtWidgets.QDialog):
         layout.setContentsMargins(26, 26, 26, 26)
         layout.setSpacing(16)
 
+        # System selection with clear styling
+        systems_group = QtWidgets.QGroupBox("Select Agile Systems")
+        systems_group.setStyleSheet(f"""
+            QGroupBox {{
+                border: 2px solid {ACCENT};
+                border-radius: 12px;
+                margin-top: 12px;
+                padding-top: 16px;
+                background-color: {CARD_BG};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: 20px;
+                padding: 0 8px;
+                font-size: 13px;
+                color: {ACCENT};
+                font-weight: 700;
+            }}
+            QCheckBox {{
+                spacing: 12px;
+                font-size: 14px;
+                font-weight: 600;
+                color: {TEXT_PRIMARY};
+            }}
+            QCheckBox::indicator {{
+                width: 24px;
+                height: 24px;
+                border: 2px solid {ACCENT};
+                border-radius: 6px;
+                background-color: {SURFACE_BG};
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: {ACCENT};
+                border-color: {ACCENT};
+            }}
+            QCheckBox::indicator:hover {{
+                border-color: {INFO};
+                background-color: {ELEVATED_BG};
+            }}
+        """)
+        
+        systems_layout = QtWidgets.QHBoxLayout(systems_group)
+        systems_layout.setSpacing(24)
+        systems_layout.setContentsMargins(20, 20, 20, 20)
+        
         self.system_checks: Dict[str, QtWidgets.QCheckBox] = {}
-        systems_row = QtWidgets.QHBoxLayout()
-        systems_row.setSpacing(18)
         for system in ["MFG Agile", "RD Agile"]:
             checkbox = QtWidgets.QCheckBox(system)
-            checkbox.setChecked(system.startswith("MFG"))
-            checkbox.setStyleSheet("font-weight: 600;")
+            checkbox.setChecked(True)  # Both checked by default
+            checkbox.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
             self.system_checks[system.split()[0]] = checkbox
-            systems_row.addWidget(checkbox)
-        systems_row.addStretch(1)
-        layout.addLayout(systems_row)
+            systems_layout.addWidget(checkbox)
+        systems_layout.addStretch(1)
+        
+        layout.addWidget(systems_group)
 
         form = QtWidgets.QFormLayout()
         form.setHorizontalSpacing(18)
@@ -1075,16 +1128,61 @@ class AgileResetDialog(QtWidgets.QDialog):
         layout.setContentsMargins(26, 26, 26, 26)
         layout.setSpacing(16)
 
+        # System selection with clear styling
+        systems_group = QtWidgets.QGroupBox("Select Agile Systems")
+        systems_group.setStyleSheet(f"""
+            QGroupBox {{
+                border: 2px solid {ACCENT};
+                border-radius: 12px;
+                margin-top: 12px;
+                padding-top: 16px;
+                background-color: {CARD_BG};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: 20px;
+                padding: 0 8px;
+                font-size: 13px;
+                color: {ACCENT};
+                font-weight: 700;
+            }}
+            QCheckBox {{
+                spacing: 12px;
+                font-size: 14px;
+                font-weight: 600;
+                color: {TEXT_PRIMARY};
+            }}
+            QCheckBox::indicator {{
+                width: 24px;
+                height: 24px;
+                border: 2px solid {ACCENT};
+                border-radius: 6px;
+                background-color: {SURFACE_BG};
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: {ACCENT};
+                border-color: {ACCENT};
+            }}
+            QCheckBox::indicator:hover {{
+                border-color: {INFO};
+                background-color: {ELEVATED_BG};
+            }}
+        """)
+        
+        systems_layout = QtWidgets.QHBoxLayout(systems_group)
+        systems_layout.setSpacing(24)
+        systems_layout.setContentsMargins(20, 20, 20, 20)
+        
         self.system_checks: Dict[str, QtWidgets.QCheckBox] = {}
-        systems_row = QtWidgets.QHBoxLayout()
         for system in ["MFG Agile", "RD Agile"]:
             checkbox = QtWidgets.QCheckBox(system)
-            checkbox.setChecked(True)
-            checkbox.setStyleSheet("font-weight: 600;")
+            checkbox.setChecked(True)  # Both checked by default
+            checkbox.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
             self.system_checks[system.split()[0]] = checkbox
-            systems_row.addWidget(checkbox)
-        systems_row.addStretch(1)
-        layout.addLayout(systems_row)
+            systems_layout.addWidget(checkbox)
+        systems_layout.addStretch(1)
+        
+        layout.addWidget(systems_group)
 
         form = QtWidgets.QFormLayout()
         form.setHorizontalSpacing(18)
@@ -1700,7 +1798,16 @@ def show_settings_dialog(parent: QtWidgets.QWidget | None = None) -> None:
 
 
 def build_user_management_section(parent: QtWidgets.QWidget) -> None:
-    layout = QtWidgets.QVBoxLayout(parent)
+    # Create scroll area
+    scroll = QtWidgets.QScrollArea()
+    scroll.setWidgetResizable(True)
+    scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+    scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    
+    # Create container widget for the scroll area
+    container = QtWidgets.QWidget()
+    layout = QtWidgets.QVBoxLayout(container)
     layout.setContentsMargins(20, 20, 20, 20)
     layout.setSpacing(18)
 
@@ -1742,12 +1849,27 @@ def build_user_management_section(parent: QtWidgets.QWidget) -> None:
     for action in cards:
         layout.addWidget(ActionCard(action))
     layout.addStretch(1)
+    
+    scroll.setWidget(container)
+    parent_layout = QtWidgets.QVBoxLayout(parent)
+    parent_layout.setContentsMargins(0, 0, 0, 0)
+    parent_layout.addWidget(scroll)
 
 
 def build_sap_section(parent: QtWidgets.QWidget) -> None:
-    layout = QtWidgets.QVBoxLayout(parent)
+    # Create scroll area
+    scroll = QtWidgets.QScrollArea()
+    scroll.setWidgetResizable(True)
+    scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+    scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    
+    # Create container widget for the scroll area
+    container = QtWidgets.QWidget()
+    layout = QtWidgets.QVBoxLayout(container)
     layout.setContentsMargins(20, 20, 20, 20)
     layout.setSpacing(18)
+    
     cards = [
         Action(
             title="Process SAP S4 Account Creation",
@@ -1774,12 +1896,27 @@ def build_sap_section(parent: QtWidgets.QWidget) -> None:
     for action in cards:
         layout.addWidget(ActionCard(action))
     layout.addStretch(1)
+    
+    scroll.setWidget(container)
+    parent_layout = QtWidgets.QVBoxLayout(parent)
+    parent_layout.setContentsMargins(0, 0, 0, 0)
+    parent_layout.addWidget(scroll)
 
 
 def build_agile_section(parent: QtWidgets.QWidget) -> None:
-    layout = QtWidgets.QVBoxLayout(parent)
+    # Create scroll area
+    scroll = QtWidgets.QScrollArea()
+    scroll.setWidgetResizable(True)
+    scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+    scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    
+    # Create container widget for the scroll area
+    container = QtWidgets.QWidget()
+    layout = QtWidgets.QVBoxLayout(container)
     layout.setContentsMargins(20, 20, 20, 20)
     layout.setSpacing(18)
+    
     cards = [
         Action(
             title="Create Agile Account",
@@ -1799,10 +1936,24 @@ def build_agile_section(parent: QtWidgets.QWidget) -> None:
     for action in cards:
         layout.addWidget(ActionCard(action))
     layout.addStretch(1)
+    
+    scroll.setWidget(container)
+    parent_layout = QtWidgets.QVBoxLayout(parent)
+    parent_layout.setContentsMargins(0, 0, 0, 0)
+    parent_layout.addWidget(scroll)
 
 
 def build_telco_section(parent: QtWidgets.QWidget) -> None:
-    layout = QtWidgets.QVBoxLayout(parent)
+    # Create scroll area
+    scroll = QtWidgets.QScrollArea()
+    scroll.setWidgetResizable(True)
+    scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+    scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    
+    # Create container widget for the scroll area
+    container = QtWidgets.QWidget()
+    layout = QtWidgets.QVBoxLayout(container)
     layout.setContentsMargins(20, 20, 20, 20)
     layout.setSpacing(18)
 
@@ -1834,6 +1985,11 @@ def build_telco_section(parent: QtWidgets.QWidget) -> None:
     for action in cards:
         layout.addWidget(ActionCard(action))
     layout.addStretch(1)
+    
+    scroll.setWidget(container)
+    parent_layout = QtWidgets.QVBoxLayout(parent)
+    parent_layout.setContentsMargins(0, 0, 0, 0)
+    parent_layout.addWidget(scroll)
 
 
 __all__ = [
