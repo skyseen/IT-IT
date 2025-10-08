@@ -1,6 +1,6 @@
 # IT-IT Automation Toolkit
 
-IT-IT is a desktop automation suite that streamlines day-to-day IT operations such as user onboarding, SAP administration, Agile account maintenance, and telecom billing updates. The application provides a Tkinter-based control panel that guides operators through each workflow while automatically preparing emails, Excel templates, and shared-folder artifacts required by downstream teams.
+IT-IT is a desktop automation suite that streamlines day-to-day IT operations such as user onboarding, SAP administration, Agile account maintenance, and telecom billing updates. The application provides a PySide6-based control panel that guides operators through each workflow while automatically preparing emails, Excel templates, and shared-folder artifacts required by downstream teams.
 
 ## Key Features
 - **Centralized dashboard** – Launch user management, SAP, Agile, and telco workflows from a single window with contextual guidance for each task.
@@ -11,8 +11,8 @@ IT-IT is a desktop automation suite that streamlines day-to-day IT operations su
 - **File orchestration** – Copy, rename, and archive supporting documents (PDF invoices, CSV extracts, request forms) into the correct shared folders for auditing.
 
 ## Repository Structure
-- `app.py` – Application entry point that builds the main Tkinter window, themes, and keyboard shortcuts.
-- `ui.py` – Composes dashboard sections, multi-user forms, telco dialogs, and settings management.
+- `app.py` – Application entry point that boots the PySide6 main window, themes, and keyboard shortcuts.
+- `ui.py` – Composes the PySide6 dashboard sections, multi-user forms, telco dialogs, and settings management.
 - `config_manager.py` / `config_utils.py` – Read, validate, and persist environment configuration used by all modules.
 - `email_service.py` – Centralized Outlook automation for assembling workflow-specific emails.
 - `user_workflow.py` – Generates onboarding/offboarding Excel templates from queued form entries.
@@ -22,7 +22,7 @@ IT-IT is a desktop automation suite that streamlines day-to-day IT operations su
 
 ## Getting Started
 1. Ensure Python 3.10+ is installed on the workstation.
-2. Install dependencies:
+2. Install dependencies (includes PySide6 for the desktop UI):
    ```bash
    pip install -r requirements.txt
    ```
