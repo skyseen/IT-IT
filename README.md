@@ -4,6 +4,7 @@ IT-IT is a desktop automation suite that streamlines day-to-day IT operations su
 
 ## Key Features
 - **Centralized dashboard** – Launch user management, SAP, Agile, and telco workflows from a single window with contextual guidance for each task.
+- **Beauty-tech noir styling** – Updated dark-tech palette with luminous accents keeps copy crisp while aligning with the new design brief.
 - **Configurable automation** – Store environment-specific paths, email recipient lists, and signature blocks in `it_tool_config.json`, editable through the in-app settings dialog.
 - **Email generation** – Produce Outlook-ready messages (plain text or HTML with inline images) for new hires, account disables, SAP tickets, Agile access updates, and telco notifications.
 - **Excel processing** – Convert user intake forms into standardized templates, reconcile SAP request spreadsheets, and update monthly telecom billing workbooks.

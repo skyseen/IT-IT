@@ -69,7 +69,7 @@ def build_user_management_section(parent: tk.Widget) -> None:
     section.pack(fill='x', pady=(0, 20))
     
     # Add subtle shadow effect with a border frame
-    container = ttk.Frame(section, style='MainTech.TFrame')
+    container = ttk.Frame(section, style='MainTechCard.TFrame')
     container.pack(fill='x', padx=20, pady=16)
 
     ttk.Button(
@@ -108,7 +108,7 @@ def build_user_management_section(parent: tk.Widget) -> None:
 def build_sap_section(parent: tk.Widget) -> None:
     section = ttk.LabelFrame(parent, text="📊 SAP Integration", style='MainTech.TLabelframe')
     section.pack(fill='x', pady=(0, 20))
-    container = ttk.Frame(section, style='MainTech.TFrame')
+    container = ttk.Frame(section, style='MainTechCard.TFrame')
     container.pack(fill='x', padx=20, pady=16)
 
     ttk.Button(
@@ -136,7 +136,7 @@ def build_sap_section(parent: tk.Widget) -> None:
 def build_agile_section(parent: tk.Widget) -> None:
     section = ttk.LabelFrame(parent, text="⚡ Agile Integration", style='MainTech.TLabelframe')
     section.pack(fill='x', pady=(0, 20))
-    container = ttk.Frame(section, style='MainTech.TFrame')
+    container = ttk.Frame(section, style='MainTechCard.TFrame')
     container.pack(fill='x', padx=20, pady=16)
 
     ttk.Button(
@@ -1275,18 +1275,18 @@ def launch_agile_reset() -> None:
 def build_telco_section(parent: tk.Widget) -> None:
     section = ttk.LabelFrame(parent, text="📞 Monthly Telco Bill Process", style='MainTech.TLabelframe')
     section.pack(fill='x', pady=(0, 20))
-    container = ttk.Frame(section, style='MainTech.TFrame')
+    container = ttk.Frame(section, style='MainTechCard.TFrame')
     container.pack(fill='x', padx=20, pady=16)
     
     # Warning label about signatures
-    warning_frame = tk.Frame(container, bg=WARNING, relief='solid', borderwidth=1)
+    warning_frame = tk.Frame(container, bg=WARNING, relief='flat', borderwidth=0, highlightbackground=BORDER_COLOR, highlightthickness=1)
     warning_frame.pack(fill='x', pady=(0, 15))
     warning_label = tk.Label(
         warning_frame,
         text="⚠ IMPORTANT: Please make sure there are 2 signatures for both Singtel and M1 before proceed with Automation tool",
         font=('Segoe UI', 10, 'bold'),
         bg=WARNING,
-        fg='#000000',
+        fg='#0B1118',
         wraplength=500,
         justify='left',
         padx=10,
