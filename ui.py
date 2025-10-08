@@ -10,15 +10,21 @@ from typing import Callable, Dict, List
 import pandas as pd
 
 from config_manager import (
+    create_profile,
+    delete_profile,
     get_email_settings,
+    get_active_profile_name,
     get_path,
     get_signature_text,
     list_email_sections,
+    list_config_backups,
+    list_profiles,
     list_paths,
+    update_profile_settings,
+    set_active_profile,
     set_path,
-    set_signature_text,
-    update_email_settings,
 )
+from activity_log import log_event
 from email_service import (
     send_agile_creation_email,
     send_agile_reset_email,
@@ -272,48 +278,153 @@ def build_multiuser_form(root: tk.Tk, title: str, labels: List[str], submit_hand
 
 
 def handle_new_user_email(user_list: List[Dict[str, str]]) -> None:
+    log_event(
+        "user.onboarding",
+        "Preparing new user onboarding email run",
+        details={"count": len(user_list)},
+    )
+
     save_folder = get_path("new_user_save_folder")
     if not save_folder:
         selected = filedialog.askdirectory(title="Select folder to save new user templates")
         if not selected:
             messagebox.showerror("INPUT_ERROR", "Save folder is required to generate templates.")
+            log_event(
+                "user.onboarding",
+                "New user email workflow cancelled - missing save folder",
+                level="warning",
+            )
             return
         set_path("new_user_save_folder", selected)
         save_folder = selected
 
-    attachments = generate_user_workbooks(user_list, save_folder)
-    send_new_user_email(user_list, attachments)
+    try:
+        attachments = generate_user_workbooks(user_list, save_folder)
+        send_new_user_email(user_list, attachments)
+    except Exception as exc:
+        log_event(
+            "user.onboarding",
+            "New user email workflow failed",
+            level="error",
+            details={"error": str(exc)},
+        )
+        messagebox.showerror(
+            "ERROR",
+            f"Unable to prepare and send the new user email.\n\nDetails: {exc}",
+        )
+        return
+
+    log_event(
+        "user.onboarding",
+        "New user email dispatched",
+        details={"count": len(user_list), "attachments": len(attachments)},
+    )
     messagebox.showinfo("Success", f"New user email sent with {len(attachments)} attachments.")
 
 
 def handle_disable_user_email(user_list: List[Dict[str, str]]) -> None:
-    send_disable_user_email(user_list)
+    try:
+        send_disable_user_email(user_list)
+    except Exception as exc:
+        log_event(
+            "user.offboarding",
+            "Disable user email workflow failed",
+            level="error",
+            details={"error": str(exc), "count": len(user_list)},
+        )
+        messagebox.showerror(
+            "ERROR",
+            f"Unable to complete disable user email workflow.\n\nDetails: {exc}",
+        )
+        return
+
+    log_event(
+        "user.offboarding",
+        "Disable user email dispatched",
+        details={"count": len(user_list)},
+    )
     messagebox.showinfo("Success", "Disable user email sent successfully.")
 
 
 def launch_sap_flow():
-    user_excel_path = filedialog.askopenfilename(title="Select user-submitted SAP Excel", filetypes=[("Excel files", "*.xlsx;*.xls"), ("All files", "*.*")])
+    user_excel_path = filedialog.askopenfilename(
+        title="Select user-submitted SAP Excel",
+        filetypes=[("Excel files", "*.xlsx;*.xls"), ("All files", "*.*")],
+    )
     if not user_excel_path:
+        log_event("sap.creation", "SAP creation flow cancelled - no Excel selected", level="warning")
         return
 
-    user_df = pd.read_excel(user_excel_path, engine="openpyxl")
+    try:
+        user_df = pd.read_excel(user_excel_path, engine="openpyxl")
+    except Exception as exc:
+        log_event(
+            "sap.creation",
+            "Unable to read user submitted SAP Excel",
+            level="error",
+            details={"error": str(exc), "file": user_excel_path},
+        )
+        messagebox.showerror(
+            "ERROR",
+            f"Failed to read the user submitted Excel.\n\nDetails: {exc}",
+        )
+        return
+
     cons_path = get_path("consolidated_excel")
     if not cons_path or not os.path.exists(cons_path):
-        cons_path = filedialog.askopenfilename(title="Select Consolidated SAP Excel", filetypes=[("Excel files", "*.xlsx;*.xls"), ("All files", "*.*")])
+        cons_path = filedialog.askopenfilename(
+            title="Select Consolidated SAP Excel",
+            filetypes=[("Excel files", "*.xlsx;*.xls"), ("All files", "*.*")],
+        )
         if not cons_path:
+            log_event(
+                "sap.creation",
+                "SAP creation flow cancelled - consolidated Excel missing",
+                level="warning",
+            )
             return
         set_path("consolidated_excel", cons_path)
 
-    # Get existing employees from BOTH sheets (SR V9 and LY V10)
-    existing_emp = get_all_existing_employees(cons_path)
+    log_event(
+        "sap.creation",
+        "Parsing SAP onboarding workbook",
+        details={"user_excel": os.path.basename(user_excel_path)},
+    )
 
-    parsed = parse_user_excel(user_df, existing_emp)
+    try:
+        existing_emp = get_all_existing_employees(cons_path)
+        parsed = parse_user_excel(user_df, existing_emp)
+    except Exception as exc:
+        log_event(
+            "sap.creation",
+            "Failed to parse SAP onboarding workbook",
+            level="error",
+            details={"error": str(exc)},
+        )
+        messagebox.showerror("ERROR", f"Unable to parse SAP onboarding Excel.\n\nDetails: {exc}")
+        return
 
     if not parsed.rows_to_append and not parsed.already_created:
+        log_event(
+            "sap.creation",
+            "SAP onboarding workbook contained no actionable rows",
+            level="warning",
+        )
         messagebox.showinfo("Nothing to process", "No valid employees found.")
         return
 
-    build_preview_window(parsed.rows_to_append, parsed.already_created, cons_path, user_excel_path, parsed.other_desc_map)
+    log_event(
+        "sap.creation",
+        "Launching SAP onboarding preview",
+        details={"pending_rows": len(parsed.rows_to_append)},
+    )
+    build_preview_window(
+        parsed.rows_to_append,
+        parsed.already_created,
+        cons_path,
+        user_excel_path,
+        parsed.other_desc_map,
+    )
 
 
 def launch_sap_support():
@@ -440,7 +551,27 @@ def launch_sap_support():
         if not confirm:
             return
 
-        send_sap_support_email(emp_id, ticket_no, screenshot_path, support_type_var.get())
+        try:
+            send_sap_support_email(emp_id, ticket_no, screenshot_path, support_type_var.get())
+        except Exception as exc:
+            log_event(
+                "sap.support",
+                "SAP support email failed",
+                level="error",
+                details={"error": str(exc), "employee": emp_id, "ticket": ticket_no},
+            )
+            messagebox.showerror(
+                'ERROR',
+                f'Failed to send SAP support email.\n\nDetails: {exc}',
+                parent=support_window,
+            )
+            return
+
+        log_event(
+            "sap.support",
+            "SAP support email dispatched",
+            details={"employee": emp_id, "ticket": ticket_no},
+        )
         messagebox.showinfo('SUCCESS', f'Support email sent for {emp_id}.', parent=support_window)
         support_window.destroy()
 
@@ -559,6 +690,12 @@ def launch_sap_disable():
             messagebox.showerror('INPUT_ERROR', 'Add at least one employee ID.', parent=disable_window)
             return
 
+        log_event(
+            "sap.disable",
+            "Preparing SAP disable workflow",
+            details={"count": len(employees)},
+        )
+
         # Get consolidated Excel path
         cons_path = get_path("consolidated_excel")
         if not cons_path or not os.path.exists(cons_path):
@@ -579,11 +716,26 @@ def launch_sap_disable():
             parent=disable_window,
         )
         if not confirm:
+            log_event(
+                "sap.disable",
+                "SAP disable workflow cancelled at confirmation",
+                level='warning',
+                details={"count": len(employees)},
+            )
             return
 
         try:
             # Disable accounts
             result = disable_sap_accounts(cons_path, employees)
+
+            log_event(
+                "sap.disable",
+                "SAP accounts updated in consolidated workbook",
+                details={
+                    "updated": len(result.updated),
+                    "not_found": len(result.not_found),
+                },
+            )
 
             # Show result summary
             summary_lines = []
@@ -609,7 +761,7 @@ def launch_sap_disable():
                 # Prompt for ticket number
                 from tkinter import simpledialog
                 ticket_no = simpledialog.askstring(
-                    "Ticket Number", 
+                    "Ticket Number",
                     "Enter ticket number (e.g. SAA122212):", 
                     parent=disable_window
                 )
@@ -634,14 +786,41 @@ def launch_sap_disable():
                     return
                 
                 set_path('sap_ticket_image_dir', os.path.dirname(ticket_img_path))
-                
+
                 # Send email with ticket info
-                send_sap_disable_email(result.updated, ticket_no, ticket_img_path)
+                try:
+                    send_sap_disable_email(result.updated, ticket_no, ticket_img_path)
+                except Exception as exc:
+                    log_event(
+                        "sap.disable",
+                        "Failed to dispatch SAP disable email",
+                        level='error',
+                        details={"error": str(exc), "ticket": ticket_no},
+                    )
+                    messagebox.showerror(
+                        'ERROR',
+                        f'Failed to send disable confirmation email.\n\nDetails: {exc}',
+                        parent=disable_window,
+                    )
+                    disable_window.destroy()
+                    return
+
+                log_event(
+                    "sap.disable",
+                    "SAP disable email dispatched",
+                    details={"ticket": ticket_no, "count": len(result.updated)},
+                )
                 messagebox.showinfo('SUCCESS', 'Disable email sent successfully.', parent=disable_window)
-            
+
             disable_window.destroy()
 
         except PermissionError:
+            log_event(
+                "sap.disable",
+                "Consolidated Excel locked during disable workflow",
+                level='error',
+                details={"file": cons_path},
+            )
             messagebox.showerror(
                 'FILE_LOCKED',
                 f'Cannot save to consolidated Excel file.\n\n'
@@ -650,6 +829,12 @@ def launch_sap_disable():
                 parent=disable_window
             )
         except Exception as e:
+            log_event(
+                "sap.disable",
+                "SAP disable workflow failed",
+                level='error',
+                details={"error": str(e)},
+            )
             messagebox.showerror(
                 'ERROR',
                 f'Error disabling accounts:\n\n{str(e)}',
@@ -862,13 +1047,39 @@ def launch_agile_creation() -> None:
             messagebox.showerror('INPUT_ERROR', 'Paste the ticket content into the form.', parent=window)
             return
 
-        send_agile_creation_email(
-            [{'Employee ID': emp} for emp in employees],
-            selected_systems,
-            ticket_no_var.get().strip(),
-            employees,
-            screenshot_path,
-            ticket_text,
+        log_event(
+            "agile.creation",
+            "Preparing Agile account creation email",
+            details={"systems": selected_systems, "count": len(employees)},
+        )
+
+        try:
+            send_agile_creation_email(
+                [{'Employee ID': emp} for emp in employees],
+                selected_systems,
+                ticket_no_var.get().strip(),
+                employees,
+                screenshot_path,
+                ticket_text,
+            )
+        except Exception as exc:
+            log_event(
+                "agile.creation",
+                "Agile account creation email failed",
+                level='error',
+                details={"error": str(exc), "ticket": ticket_no_var.get().strip()},
+            )
+            messagebox.showerror(
+                'ERROR',
+                f'Failed to prepare Agile account creation email.\n\nDetails: {exc}',
+                parent=window,
+            )
+            return
+
+        log_event(
+            "agile.creation",
+            "Agile account creation email prepared",
+            details={"ticket": ticket_no_var.get().strip(), "count": len(employees)},
         )
         messagebox.showinfo('SUCCESS', 'Agile account creation email prepared and sent.', parent=window)
         window.destroy()
@@ -1006,7 +1217,33 @@ def launch_agile_reset() -> None:
             messagebox.showerror('INPUT_ERROR', 'Selected screenshot file could not be found.', parent=window)
             return
 
-        send_agile_reset_email(selected_systems, ticket_no, emp_id, screenshot_path)
+        log_event(
+            "agile.reset",
+            "Preparing Agile password reset email",
+            details={"systems": selected_systems, "employee": emp_id},
+        )
+
+        try:
+            send_agile_reset_email(selected_systems, ticket_no, emp_id, screenshot_path)
+        except Exception as exc:
+            log_event(
+                "agile.reset",
+                "Agile password reset email failed",
+                level='error',
+                details={"error": str(exc), "ticket": ticket_no},
+            )
+            messagebox.showerror(
+                'ERROR',
+                f'Failed to prepare Agile password reset email.\n\nDetails: {exc}',
+                parent=window,
+            )
+            return
+
+        log_event(
+            "agile.reset",
+            "Agile password reset email prepared",
+            details={"ticket": ticket_no, "employee": emp_id},
+        )
         messagebox.showinfo('SUCCESS', 'Agile password reset email prepared and sent.', parent=window)
         window.destroy()
 
@@ -1065,15 +1302,17 @@ def launch_singtel_process():
         filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
     )
     if not pdf1:
+        log_event("telco.singtel", "Singtel process cancelled - missing first PDF", level='warning')
         return
-    
+
     pdf2 = filedialog.askopenfilename(
         title="Select Second PDF (will be renamed to IGS Telco)",
         filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
     )
     if not pdf2:
+        log_event("telco.singtel", "Singtel process cancelled - missing second PDF", level='warning')
         return
-    
+
     # Get paths from config or prompt
     igs32_path = get_path("singtel_igs32_path")
     if not igs32_path:
@@ -1101,21 +1340,46 @@ def launch_singtel_process():
         f"- {igs32_path}\n"
         f"- {cnt35_path}\n\n"
         "Email will be sent after processing."
-    )
+        )
     if not confirm:
+        log_event(
+            "telco.singtel",
+            "Singtel process cancelled at confirmation",
+            level='warning',
+            details={"pdf1": os.path.basename(pdf1), "pdf2": os.path.basename(pdf2)},
+        )
         return
-    
+
     try:
+        log_event(
+            "telco.singtel",
+            "Processing Singtel bills",
+            details={
+                "pdf1": os.path.basename(pdf1),
+                "pdf2": os.path.basename(pdf2),
+                "igs32": igs32_path,
+                "cnt35": cnt35_path,
+            },
+        )
         # Process bills
         result = process_singtel_bills(pdf1, pdf2, igs32_path, cnt35_path)
-        
+
         # Send email with attachments from IGS.32
         send_singtel_telco_email(
             result['sip_igs32'],
             result['telco_igs32'],
             result['igs32_path']
         )
-        
+
+        log_event(
+            "telco.singtel",
+            "Singtel bills processed and email dispatched",
+            details={
+                "igs32_output": result['igs32_path'],
+                "cnt35_output": cnt35_path,
+            },
+        )
+
         messagebox.showinfo(
             "SUCCESS",
             "Singtel bills processed successfully!\n\n"
@@ -1125,6 +1389,12 @@ def launch_singtel_process():
             "Email sent with attachments."
         )
     except Exception as e:
+        log_event(
+            "telco.singtel",
+            "Singtel bill processing failed",
+            level='error',
+            details={"error": str(e)},
+        )
         messagebox.showerror(
             "ERROR",
             f"Error processing Singtel bills:\n\n{str(e)}"
@@ -1139,6 +1409,7 @@ def launch_m1_process():
         filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
     )
     if not pdf_path:
+        log_event("telco.m1", "M1 process cancelled - PDF not selected", level='warning')
         return
     
     # Get paths from config or prompt
@@ -1147,6 +1418,7 @@ def launch_m1_process():
         igs32_path = filedialog.askdirectory(title="Select M1-IGS.32 folder path")
         if not igs32_path:
             messagebox.showerror("INPUT_ERROR", "M1-IGS.32 path is required.")
+            log_event("telco.m1", "M1 process cancelled - missing IGS.32 path", level='warning')
             return
         set_path("m1_igs32_path", igs32_path)
     
@@ -1155,6 +1427,7 @@ def launch_m1_process():
         cnt35_path = filedialog.askdirectory(title="Select M1-CNT.35 folder path")
         if not cnt35_path:
             messagebox.showerror("INPUT_ERROR", "M1-CNT.35 path is required.")
+            log_event("telco.m1", "M1 process cancelled - missing CNT.35 path", level='warning')
             return
         set_path("m1_cnt35_path", cnt35_path)
     
@@ -1167,6 +1440,7 @@ def launch_m1_process():
         )
         if not igs32_excel:
             messagebox.showerror("INPUT_ERROR", "IGS.32 Excel file is required.")
+            log_event("telco.m1", "M1 process cancelled - missing IGS.32 Excel", level='warning')
             return
         set_path("m1_igs32_excel", igs32_excel)
     
@@ -1178,6 +1452,7 @@ def launch_m1_process():
         )
         if not cnt35_excel:
             messagebox.showerror("INPUT_ERROR", "CNT.35 Excel file is required.")
+            log_event("telco.m1", "M1 process cancelled - missing CNT.35 Excel", level='warning')
             return
         set_path("m1_cnt35_excel", cnt35_excel)
     
@@ -1190,6 +1465,7 @@ def launch_m1_process():
     )
     if user_amount is None:
         messagebox.showwarning("CANCELLED", "Amount is required.")
+        log_event("telco.m1", "M1 process cancelled - amount not provided", level='warning')
         return
     
     # Confirm before processing
@@ -1204,12 +1480,28 @@ def launch_m1_process():
         "Excel files will be updated and email will be sent."
     )
     if not confirm:
+        log_event(
+            "telco.m1",
+            "M1 process cancelled at confirmation",
+            level='warning',
+            details={"pdf": os.path.basename(pdf_path), "amount": user_amount},
+        )
         return
-    
+
     try:
+        log_event(
+            "telco.m1",
+            "Processing M1 bill",
+            details={
+                "pdf": os.path.basename(pdf_path),
+                "amount": user_amount,
+                "igs32_path": igs32_path,
+                "cnt35_path": cnt35_path,
+            },
+        )
         # Process M1 bill (copy PDFs)
         result = process_m1_bill(pdf_path, igs32_path, cnt35_path)
-        
+
         # Update both Excel files
         excel_results = update_both_m1_excels(igs32_excel, cnt35_excel, user_amount)
         
@@ -1233,19 +1525,42 @@ def launch_m1_process():
         
         # Show summary
         messagebox.showinfo("PROCESS_SUMMARY", "\n".join(summary_lines))
-        
+
         # Send email with PDF from IGS.32
         send_m1_telco_email(result['m1_igs32'])
-        
+
+        log_event(
+            "telco.m1",
+            "M1 bill processed and email dispatched",
+            details={
+                "amount": user_amount,
+                "igs32_pdf": result['m1_igs32'],
+                "igs32_excel": igs32_excel,
+                "cnt35_excel": cnt35_excel,
+            },
+        )
+
         messagebox.showinfo("SUCCESS", "Email sent successfully!")
-        
+
     except PermissionError:
+        log_event(
+            "telco.m1",
+            "Excel file locked during M1 process",
+            level='error',
+            details={"igs32_excel": igs32_excel, "cnt35_excel": cnt35_excel},
+        )
         messagebox.showerror(
             "FILE_LOCKED",
             "Cannot update Excel file.\n\n"
             "Please close the Excel file and try again."
         )
     except Exception as e:
+        log_event(
+            "telco.m1",
+            "M1 bill processing failed",
+            level='error',
+            details={"error": str(e)},
+        )
         messagebox.showerror(
             "ERROR",
             f"Error processing M1 bill:\n\n{str(e)}"
@@ -1255,7 +1570,7 @@ def launch_m1_process():
 def show_settings_dialog(root: tk.Tk) -> None:
     dialog = tk.Toplevel(root)
     dialog.title("Settings")
-    dialog.geometry("720x540")
+    dialog.geometry("780x600")
     dialog.configure(bg='#1e1e1e')
 
     style = ttk.Style(dialog)
@@ -1266,6 +1581,33 @@ def show_settings_dialog(root: tk.Tk) -> None:
     style.configure('Settings.TLabel', background=PANEL_BG, foreground=TEXT_PRIMARY, font=('Consolas', 10))
     style.configure('Settings.TEntry', fieldbackground=INPUT_BG, foreground=TEXT_PRIMARY, insertcolor=ACCENT, font=('Consolas', 10))
     style.configure('SettingsButton.TButton', background=POSITIVE, foreground='#0f172a', padding=(12, 8), font=('Consolas', 11, 'bold'))
+
+    active_profile = get_active_profile_name()
+    profile_var = tk.StringVar(value=active_profile)
+
+    profile_names = list_profiles()
+    if active_profile not in profile_names:
+        profile_names.append(active_profile)
+
+    path_keys = set()
+    for name in profile_names:
+        path_keys.update(list_paths(name).keys())
+    if not path_keys:
+        path_keys.update(list_paths(active_profile).keys())
+    path_keys = sorted(path_keys)
+
+    email_field_map: Dict[str, set[str]] = {}
+    for name in profile_names:
+        sections = list_email_sections(name)
+        for section, data in sections.items():
+            if not isinstance(data, dict):
+                continue
+            email_field_map.setdefault(section, set()).update(data.keys())
+    if not email_field_map:
+        sections = list_email_sections(active_profile)
+        for section, data in sections.items():
+            if isinstance(data, dict):
+                email_field_map.setdefault(section, set()).update(data.keys())
 
     notebook_container = ttk.Frame(dialog, style='Settings.TFrame')
     notebook_container.pack(fill='both', expand=True, padx=15, pady=15)
@@ -1283,16 +1625,17 @@ def show_settings_dialog(root: tk.Tk) -> None:
     notebook = ttk.Notebook(inner_frame)
     notebook.pack(fill='both', expand=True)
 
+    profiles_frame = ttk.Frame(notebook, style='Settings.TFrame')
     paths_frame = ttk.Frame(notebook, style='Settings.TFrame')
     email_frame = ttk.Frame(notebook, style='Settings.TFrame')
     signature_frame = ttk.Frame(notebook, style='Settings.TFrame')
 
+    notebook.add(profiles_frame, text='Profiles & Backups')
     notebook.add(paths_frame, text='Paths')
     notebook.add(email_frame, text='Email Recipients')
     notebook.add(signature_frame, text='Signature')
 
     path_entries: Dict[str, ttk.Entry] = {}
-    paths = list_paths()
 
     def browse_for_path(key: str) -> None:
         current = path_entries[key].get().strip()
@@ -1305,31 +1648,25 @@ def show_settings_dialog(root: tk.Tk) -> None:
             path_entries[key].delete(0, 'end')
             path_entries[key].insert(0, selected)
 
-    for idx, (key, value) in enumerate(sorted(paths.items())):
+    for idx, key in enumerate(path_keys):
         row = ttk.Frame(paths_frame, style='Settings.TFrame')
         row.grid(row=idx, column=0, sticky='ew', pady=8, padx=10)
-        ttk.Label(row, text=key, style='Settings.TLabel', width=22, anchor='w').pack(side='left')
+        ttk.Label(row, text=key, style='Settings.TLabel', width=26, anchor='w').pack(side='left')
         entry = ttk.Entry(row, style='Settings.TEntry')
-        entry.insert(0, value)
         entry.pack(side='left', fill='x', expand=True, padx=(10, 10))
         ttk.Button(row, text='Browse', command=lambda k=key: browse_for_path(k)).pack(side='right')
         path_entries[key] = entry
 
     email_entries: Dict[tuple[str, str], ttk.Entry] = {}
-    email_sections = list_email_sections()
-    for section, data in sorted(email_sections.items()):
-        if section.lower() == 'signature':
-            continue
-        if not isinstance(data, dict):
-            continue
+    for section in sorted(email_field_map.keys()):
         section_frame = ttk.LabelFrame(email_frame, text=section.upper(), style='Settings.TLabelframe')
         section_frame.pack(fill='x', padx=10, pady=10)
-        for field in ('to', 'cc'):
+        fields = sorted(email_field_map[section] or {'to', 'cc'})
+        for field in fields:
             row = ttk.Frame(section_frame, style='Settings.TFrame')
             row.pack(fill='x', pady=6)
-            ttk.Label(row, text=field.upper(), style='Settings.TLabel', width=8, anchor='w').pack(side='left')
+            ttk.Label(row, text=field.upper(), style='Settings.TLabel', width=10, anchor='w').pack(side='left')
             entry = ttk.Entry(row, style='Settings.TEntry')
-            entry.insert(0, data.get(field, ''))
             entry.pack(side='left', fill='x', expand=True, padx=(10, 0))
             email_entries[(section, field)] = entry
 
@@ -1337,24 +1674,155 @@ def show_settings_dialog(root: tk.Tk) -> None:
     signature_label.pack(anchor='w', padx=12, pady=(12, 6))
     signature_text = tk.Text(signature_frame, height=10, wrap='word', font=('Consolas', 10), bg=INPUT_BG, fg=TEXT_PRIMARY, insertbackground=ACCENT, borderwidth=1, relief='solid')
     signature_text.pack(fill='both', expand=True, padx=12, pady=(0, 12))
-    signature_text.insert('1.0', get_signature_text())
+
+    backups_label = ttk.Label(profiles_frame, text='Environment profile', style='Settings.TLabel')
+    backups_label.pack(anchor='w', padx=12, pady=(12, 6))
+
+    profile_combo = ttk.Combobox(profiles_frame, textvariable=profile_var, state='readonly')
+    profile_combo.pack(fill='x', padx=12, pady=(0, 12))
+
+    new_profile_var = tk.StringVar()
+    new_profile_row = ttk.Frame(profiles_frame, style='Settings.TFrame')
+    new_profile_row.pack(fill='x', padx=12, pady=(0, 12))
+    ttk.Entry(new_profile_row, textvariable=new_profile_var, style='Settings.TEntry').pack(side='left', fill='x', expand=True)
+    ttk.Button(new_profile_row, text='Create Profile', command=lambda: create_new_profile()).pack(side='left', padx=(10, 0))
+
+    ttk.Button(profiles_frame, text='Delete Selected Profile', command=lambda: delete_selected_profile(), style='SettingsButton.TButton').pack(anchor='e', padx=12, pady=(0, 12))
+
+    ttk.Label(profiles_frame, text='Recent configuration backups', style='Settings.TLabel').pack(anchor='w', padx=12, pady=(12, 6))
+    backups_list = tk.Listbox(
+        profiles_frame,
+        height=6,
+        bg=INPUT_BG,
+        fg=TEXT_PRIMARY,
+        selectbackground=ACCENT,
+        borderwidth=0,
+        highlightthickness=0,
+    )
+    backups_list.pack(fill='both', expand=True, padx=12, pady=(0, 12))
 
     status_var = tk.StringVar()
     status_label = ttk.Label(dialog, textvariable=status_var, foreground='#58a6ff', background='#1e1e1e', font=('Consolas', 10))
     status_label.pack(fill='x', padx=15, pady=(0, 5))
 
-    def save_settings() -> None:
+    def populate_fields(profile_name: str) -> None:
+        current_paths = list_paths(profile_name)
         for key, entry in path_entries.items():
-            set_path(key, entry.get().strip())
+            entry.delete(0, 'end')
+            entry.insert(0, current_paths.get(key, ''))
 
+        sections = list_email_sections(profile_name)
         for (section, field), entry in email_entries.items():
-            update_email_settings(section, {field: entry.get().strip()})
+            value = ''
+            section_data = sections.get(section)
+            if isinstance(section_data, dict):
+                value = section_data.get(field, '')
+            entry.delete(0, 'end')
+            entry.insert(0, value)
 
-        signature_value = signature_text.get('1.0', 'end').strip()
-        set_signature_text(signature_value)
+        signature_text.delete('1.0', 'end')
+        signature_text.insert('1.0', get_signature_text(profile_name))
 
-        status_var.set('Settings saved successfully.')
+    def refresh_backups() -> None:
+        backups_list.delete(0, 'end')
+        for entry in list_config_backups(limit=12):
+            timestamp = entry.get('timestamp', 'unknown')
+            profile = entry.get('active_profile', 'default')
+            action = entry.get('action', 'update')
+            backup_file = entry.get('backup_file', '')
+            backups_list.insert('end', f"{timestamp} | {profile} | {action} -> {backup_file}")
+
+    def refresh_profiles(select: str | None = None) -> None:
+        names = list_profiles()
+        profile_combo['values'] = names
+        if select:
+            profile_var.set(select)
+        elif profile_var.get() not in names and names:
+            profile_var.set(names[0])
+        populate_fields(profile_var.get())
+        refresh_backups()
+        if hasattr(root, 'active_profile_var'):
+            root.active_profile_var.set(profile_var.get())
+
+    def on_profile_selected(event=None) -> None:
+        selected = profile_var.get()
+        current_active = get_active_profile_name()
+        if selected != current_active:
+            try:
+                set_active_profile(selected)
+            except ValueError as exc:
+                status_var.set(str(exc))
+                profile_var.set(current_active)
+                return
+            log_event('config.profile', 'Switched active configuration profile', details={'profile': selected})
+        populate_fields(selected)
+        refresh_backups()
+        status_var.set(f"Active profile set to '{selected}'.")
         dialog.after(2500, lambda: status_var.set(''))
+        if hasattr(root, 'active_profile_var'):
+            root.active_profile_var.set(selected)
+
+    def create_new_profile() -> None:
+        name = new_profile_var.get().strip()
+        if not name:
+            status_var.set('Enter a profile name before creating.')
+            return
+        try:
+            create_profile(name, source_profile=profile_var.get())
+        except ValueError as exc:
+            status_var.set(str(exc))
+            return
+        new_profile_var.set('')
+        log_event('config.profile', 'Created configuration profile', details={'profile': name})
+        status_var.set(f"Profile '{name}' created.")
+        refresh_profiles(select=name)
+        dialog.after(2500, lambda: status_var.set(''))
+
+    def delete_selected_profile() -> None:
+        target = profile_var.get()
+        if target == 'default':
+            status_var.set('Default profile cannot be deleted.')
+            return
+        if not messagebox.askyesno('Delete Profile', f"Delete profile '{target}'? This cannot be undone.", parent=dialog):
+            return
+        try:
+            delete_profile(target)
+        except ValueError as exc:
+            status_var.set(str(exc))
+            return
+        log_event('config.profile', 'Deleted configuration profile', details={'profile': target})
+        status_var.set(f"Profile '{target}' deleted.")
+        refresh_profiles(select='default')
+        dialog.after(2500, lambda: status_var.set(''))
+
+    def save_settings() -> None:
+        selected_profile = profile_var.get()
+        paths_payload = {key: entry.get().strip() for key, entry in path_entries.items()}
+        email_payload: Dict[str, Dict[str, str]] = {}
+        for (section, field), entry in email_entries.items():
+            email_payload.setdefault(section, {})[field] = entry.get().strip()
+        signature_value = signature_text.get('1.0', 'end').strip()
+
+        try:
+            update_profile_settings(
+                selected_profile,
+                paths=paths_payload,
+                email_settings=email_payload,
+                signature=signature_value,
+            )
+        except Exception as exc:
+            status_var.set(f'Failed to save settings: {exc}')
+            log_event('config', 'Failed to save configuration', level='error', details={'error': str(exc)})
+            return
+
+        log_event('config', 'Configuration updated', details={'profile': selected_profile})
+        status_var.set(f"Settings saved for profile '{selected_profile}'.")
+        refresh_backups()
+        dialog.after(2500, lambda: status_var.set(''))
+
+    profile_combo.bind('<<ComboboxSelected>>', on_profile_selected)
+
+    refresh_profiles(select=profile_var.get())
 
     buttons = ttk.Frame(dialog, style='Settings.TFrame')
     buttons.pack(fill='x', padx=15, pady=(0, 15))

@@ -11,6 +11,7 @@
 1. [Introduction](#introduction)
 2. [Getting Started](#getting-started)
 3. [Main Dashboard](#main-dashboard)
+   - [Operations Center](#operations-center)
 4. [User Management Module](#user-management-module)
    - [Create New User Email](#create-new-user-email)
    - [Disable User Email Access](#disable-user-email-access)
@@ -68,41 +69,38 @@ The **IT Admin Automation Toolkit** is a comprehensive desktop application desig
 
 ## Main Dashboard
 
-The main dashboard is the central hub of the application, featuring three primary modules:
+The refreshed dashboard is organised into modern tabs that group related workflows while keeping the familiar automation
+actions untouched. Use the tab strip near the top of the window to switch between the following workspaces:
 
-```
-┌─────────────────────────────────────────┐
-│      IT ! IT - ADMIN TOOLKIT            │
-│                                         │
-│  ┌──────────────────────────────────┐  │
-│  │   👥 User Management             │  │
-│  │   - Create New User Email        │  │
-│  │   - Disable User Email           │  │
-│  └──────────────────────────────────┘  │
-│                                         │
-│  ┌──────────────────────────────────┐  │
-│  │   📊 SAP Integration             │  │
-│  │   - Process Account Creation     │  │
-│  │   - Account Support              │  │
-│  └──────────────────────────────────┘  │
-│                                         │
-│  ┌──────────────────────────────────┐  │
-│  │   ⚡ Agile Integration           │  │
-│  │   - Create Agile Account         │  │
-│  │   - Reset Agile Password         │  │
-│  └──────────────────────────────────┘  │
-│                                         │
-│  ⚙ Settings                            │
-│  Press ESC to exit                     │
-└─────────────────────────────────────────┘
-```
+* **User Ops** – Launch user onboarding and off-boarding email automations.
+* **SAP** – Access SAP account creation previews, support ticket submissions, and disable workflows.
+* **Agile** – Prepare Agile account creation or password reset requests with ticket evidence.
+* **Telecom** – Run the Singtel and M1 billing processors with guided confirmations.
+* **Operations Center** – Monitor live activity logs, audit events, and refresh them on demand.
 
-### Navigation
+The header retains the ASCII banner and proudly displays the current environment profile alongside a real-time timestamp. A
+status bar at the bottom summarises the active profile and streams the most recent activity, giving operators immediate feedback
+without interrupting the flow of work. Press **ESC** at any time to exit the application, and use the **⚙ Settings** button in the
+header to configure environments or recipients.
 
-- **Click buttons** to access different functions
-- **Press ESC** to exit the application at any time
-- **Scroll** with mouse wheel when content extends beyond the window
-- **Resize window** for comfortable viewing (content auto-centers)
+### Navigation Tips
+
+* **Mouse or keyboard tabs** – Use the tab strip or press `Ctrl+Tab`/`Ctrl+Shift+Tab` to cycle between modules.
+* **Scroll within tabs** – Each tab supports vertical scrolling for long forms, with content automatically centred on resize.
+* **Activity toast** – Watch the status bar for confirmation or error details immediately after a workflow runs.
+
+### Operations Center
+
+The **Operations Center** tab provides a live audit feed of all major workflows. Entries display timestamps, categories, and a
+succinct description of each action (for example, “SAP disable email dispatched” or “M1 bill processed”). Use the **Refresh**
+button to reload historical events (up to the most recent 120 entries), and keep the panel open while running automations to
+observe progress in real time.
+
+Key highlights:
+
+* **Streaming events** – Actions logged from any tab append to the Operations Center automatically.
+* **Colour-aligned log view** – The dark, high-contrast panel is designed to match the rest of the console.
+* **At-a-glance troubleshooting** – Error level entries appear in the log and in the status bar, helping you respond quickly.
 
 ---
 
@@ -523,12 +521,24 @@ Ticket #: S0000YF30
 
 ### Accessing Settings
 
-1. Click the **⚙ Settings** button in the main dashboard header
-2. The Settings dialog opens with three tabs
+1. Click the **⚙ Settings** button in the main dashboard header.
+2. The Settings dialog opens with four tabs: **Profiles & Backups**, **Paths**, **Email Recipients**, and **Signature**.
+
+### Profiles & Backups Tab
+
+Manage environment-specific settings from this tab.
+
+* **Active profile selector** – Choose the configuration profile to edit. The active profile is mirrored in the dashboard status bar.
+* **Create profile** – Enter a new name (e.g., `UAT` or `Production-Asia`) and click **Create Profile** to clone the current setup.
+* **Delete profile** – Remove non-default profiles when they are no longer required. The default profile cannot be deleted.
+* **Recent backups** – Review the automatic snapshots generated whenever settings change. Files are stored under `config_backups/`.
+
+Switching profiles instantly loads their saved paths, recipients, and signatures, helping teams separate production and testing
+environments without manual file swaps.
 
 ### Paths Tab
 
-Configure file and folder locations:
+Configure file and folder locations for the selected profile:
 
 | Setting | Description | Example |
 |---------|-------------|---------|
@@ -537,76 +547,31 @@ Configure file and folder locations:
 | **SAP Ticket Image Dir** | Default folder for SAP ticket screenshots | `C:\IT\Screenshots\SAP\` |
 | **Agile Ticket Image Dir** | Default folder for Agile ticket screenshots | `C:\IT\Screenshots\Agile\` |
 
-#### How to Set Paths
-
-1. Click **"Browse..."** next to the path field
-2. Navigate to the desired folder/file
-3. Click "Select Folder" or "Open"
-4. Path appears in the text field
-5. Click **"Save"** at the bottom
+Use the **Browse** buttons to update entries. Settings are stored per profile, allowing different environments to point to their
+own network drives.
 
 ### Email Recipients Tab
 
-Configure email recipients for each module:
+Customise To/CC lists used by the automation emails (again per profile). Enter addresses separated by semicolons (`;`). The
+defaults mirror the previous version of the toolkit and can be reinstated by copying from the table below.
 
-#### New User Email
-
-- **To**: `benni.yh.tsao@ingrasys.com; rayliao@ingrasys.com`  
-- **CC**: `lingyun.niu@foxconn.com.sg; alex.ng@ingrasys.com; chinlun.wong@ingrasys.com; chinyong.lim@ingrasys.com; oscar.loo@ingrasys.com`
-
-**Default**: `kenyi.seen@ingrasys.com`
-
-#### Disable User Email
-
-- **To**: `benni.yh.tsao@ingrasys.com; rayliao@ingrasys.com`  
-- **CC**: `lingyun.niu@foxconn.com.sg; alex.ng@ingrasys.com; chinlun.wong@ingrasys.com; chinyong.lim@ingrasys.com; oscar.loo@ingrasys.com`
-
-**Default**: `kenyi.seen@ingrasys.com`
-
-#### SAP Creation
-
-- **To**: `Lingyun Niu <lingyun.niu@foxconn.com.sg>; Yuyu Zhang 張瑜 <windy.y.zhang@fii-foxconn.com>`  
-- **CC**:`SG-IGS-IT@ingrasys.com`
-
-**Default To**: `raymond.lin@fii-foxconn.com`  
-**Default CC**: `kenyi.seen@ingrasys.com; chinlun.wong@ingrasys.com; chinyong.lim@ingrasys.com; oscar.loo@ingrasys.com`
-
-#### SAP Support
-
-- **To**:  `Lingyun Niu <lingyun.niu@foxconn.com.sg>; Yuyu Zhang 張瑜 <windy.y.zhang@fii-foxconn.com>`  
-- **CC**: `SG-IGS-IT@ingrasys.com`
-
-**Default To**: `raymond.lin@fii-foxconn.com`  
-**Default CC**: `kenyi.seen@ingrasys.com; chinlun.wong@ingrasys.com; chinyong.lim@ingrasys.com; oscar.loo@ingrasys.com`
-
-#### Agile Creation & Reset
-
-- **To**:`zhong.yang@fii-foxconn.com`  
-- **CC**: `lingyun.niu@foxconn.com.sg; kenyi.seen@ingrasys.com; chinlun.wong@ingrasys.com; oscar.loo@ingrasys.com; chinyong.lim@ingrasys.com`
-
-**Default To**: `zhong.yang@fii-foxconn.com`  
-**Default CC**: `lingyun.niu@foxconn.com.sg; kenyi.seen@ingrasys.com; chinlun.wong@ingrasys.com; oscar.loo@ingrasys.com; chinyong.lim@ingrasys.com`
-
-#### Email Format Guidelines
-
-- **Single recipient**: `user@example.com`
-- **Multiple recipients**: `user1@example.com; user2@example.com; user3@example.com`
-- **Use semicolons** (;) to separate multiple addresses
-- **No spaces** around semicolons (optional but cleaner)
+| Workflow | Default To | Default CC |
+|----------|------------|------------|
+| New User | `benni.yh.tsao@ingrasys.com; rayliao@ingrasys.com` | `lingyun.niu@foxconn.com.sg; alex.ng@ingrasys.com; chinlun.wong@ingrasys.com; chinyong.lim@ingrasys.com; oscar.loo@ingrasys.com` |
+| Disable User | `benni.yh.tsao@ingrasys.com; rayliao@ingrasys.com` | `lingyun.niu@foxconn.com.sg; alex.ng@ingrasys.com; chinlun.wong@ingrasys.com; chinyong.lim@ingrasys.com; oscar.loo@ingrasys.com` |
+| SAP Creation/Support | `raymond.lin@fii-foxconn.com` | `kenyi.seen@ingrasys.com; chinlun.wong@ingrasys.com; chinyong.lim@ingrasys.com; oscar.loo@ingrasys.com` |
+| Agile Creation/Reset | `zhong.yang@fii-foxconn.com` | `lingyun.niu@foxconn.com.sg; kenyi.seen@ingrasys.com; chinlun.wong@ingrasys.com; oscar.loo@ingrasys.com; chinyong.lim@ingrasys.com` |
 
 ### Signature Tab
 
-Customize your email signature:
+Edit the shared email signature for the active profile.
 
-1. Edit the text area with your signature
-2. Supports HTML formatting
-3. Include:
-   - Your name
-   - Job title
-   - Contact information
-   - Department
+1. Update the text area (supports plain text or HTML).
+2. Include your name, job title, contact details, and any compliance statements.
+3. Save to apply the signature across all automated emails for that profile.
 
 **Default Signature**:
+
 ```
 Best Regards,
 
@@ -617,29 +582,17 @@ Email: your.name@ingrasys.com
 Tel: +65 XXXX XXXX
 ```
 
-#### Signature Tips
+### Saving Settings & Versioning
 
-✅ Keep it professional and concise  
-✅ Include essential contact info  
-✅ Use HTML for formatting (optional)  
-✅ Test by sending a sample email  
+* Changes are saved per profile when you click **Save**.
+* Every save creates a timestamped backup under `config_backups/` with a changelog entry visible in the Profiles tab.
+* The status message beneath the dialog confirms when updates succeed or warns if validation fails.
 
-### Saving Settings
+### Recovering or Resetting
 
-1. Make changes in any tab
-2. Click **"Save"** at the bottom of the dialog
-3. Settings are saved to `it_tool_config.json`
-4. Confirmation message appears
-5. Close the settings dialog
-
-### Resetting to Defaults
-
-If settings become corrupted:
-
-1. Close the application
-2. Delete `it_tool_config.json` in the application folder
-3. Restart the application
-4. Default settings will be recreated
+* To restore a previous configuration, copy a backup JSON from `config_backups/` back to the main directory and rename it to
+  `it_tool_config.json` (while the app is closed).
+* To start from scratch, delete `it_tool_config.json` and the backups folder, then relaunch the application to regenerate defaults.
 
 ---
 
