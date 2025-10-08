@@ -36,20 +36,20 @@ from email_service import (
     send_m1_telco_email,
 )
 
-# Balanced Dark Theme - Professional & Easy to Read
-BASE_BG = '#1a1d29'  # Soft dark blue-gray (not too dark)
-PANEL_BG = '#242837'  # Slightly lighter panels for depth
-INPUT_BG = '#2d3548'  # Medium dark for inputs (good contrast)
-ACCENT = '#60a5fa'  # Bright blue (high contrast)
-SECONDARY_ACCENT = '#34d399'  # Bright mint green
-POSITIVE = '#34d399'  # Bright green
-INFO_ACCENT = '#3b82f6'  # Vibrant blue
-WARNING = '#fbbf24'  # Bright yellow
-DANGER = '#f87171'  # Bright coral red
-TEXT_PRIMARY = '#f1f5f9'  # Almost white text for readability
-TEXT_MUTED = '#94a3b8'  # Light gray for secondary text
-BORDER_COLOR = '#334155'  # Subtle borders
-SHADOW_COLOR = '#0f1419'  # Deep shadow
+# Beauty-Tech Inspired Dark Tech Theme
+BASE_BG = '#0B1118'  # Deep midnight backdrop
+PANEL_BG = '#141B26'  # Elevated card surface
+INPUT_BG = '#1C2533'  # Inked input cradle
+ACCENT = '#5E8BFF'  # Electric azure accent
+SECONDARY_ACCENT = '#FF8AD6'  # Neon rose highlight
+POSITIVE = '#39D98A'  # Vibrant success green
+INFO_ACCENT = '#8A7CFF'  # Ultraviolet info tone
+WARNING = '#F7B94B'  # Amber warning pulse
+DANGER = '#FF6B81'  # Vivid coral for destructive actions
+TEXT_PRIMARY = '#F5F7FF'  # Luminous primary text
+TEXT_MUTED = '#9FB3C8'  # Muted slate secondary text
+BORDER_COLOR = '#1F2A3A'  # Subtle divider
+SHADOW_COLOR = '#04070C'  # Depth shadow
 from user_workflow import generate_user_workbooks
 from sap_workflows import (
     build_preview_window,
@@ -69,7 +69,7 @@ def build_user_management_section(parent: tk.Widget) -> None:
     section.pack(fill='x', pady=(0, 20))
     
     # Add subtle shadow effect with a border frame
-    container = ttk.Frame(section, style='MainTech.TFrame')
+    container = ttk.Frame(section, style='MainTechCard.TFrame')
     container.pack(fill='x', padx=20, pady=16)
 
     ttk.Button(
@@ -108,7 +108,7 @@ def build_user_management_section(parent: tk.Widget) -> None:
 def build_sap_section(parent: tk.Widget) -> None:
     section = ttk.LabelFrame(parent, text="📊 SAP Integration", style='MainTech.TLabelframe')
     section.pack(fill='x', pady=(0, 20))
-    container = ttk.Frame(section, style='MainTech.TFrame')
+    container = ttk.Frame(section, style='MainTechCard.TFrame')
     container.pack(fill='x', padx=20, pady=16)
 
     ttk.Button(
@@ -136,7 +136,7 @@ def build_sap_section(parent: tk.Widget) -> None:
 def build_agile_section(parent: tk.Widget) -> None:
     section = ttk.LabelFrame(parent, text="⚡ Agile Integration", style='MainTech.TLabelframe')
     section.pack(fill='x', pady=(0, 20))
-    container = ttk.Frame(section, style='MainTech.TFrame')
+    container = ttk.Frame(section, style='MainTechCard.TFrame')
     container.pack(fill='x', padx=20, pady=16)
 
     ttk.Button(
@@ -170,8 +170,11 @@ def build_multiuser_form(root: tk.Tk, title: str, labels: List[str], submit_hand
     style.configure('Tech.TLabelframe.Label', background=PANEL_BG, foreground=ACCENT, font=('Segoe UI', 11, 'bold'))
     style.configure('Tech.TLabel', background=PANEL_BG, foreground=TEXT_PRIMARY, font=('Segoe UI', 10))
     style.configure('Tech.TEntry', fieldbackground=INPUT_BG, foreground=TEXT_PRIMARY, borderwidth=1, insertcolor=ACCENT, font=('Segoe UI', 10), relief='flat')
-    style.configure('TechButton.TButton', background=POSITIVE, foreground='#ffffff', borderwidth=0, padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
-    style.map('TechButton.TButton', background=[('active', '#059669'), ('pressed', '#047857')])
+    style.configure('TechButton.TButton', background=POSITIVE, foreground=TEXT_PRIMARY, borderwidth=0, padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.map(
+        'TechButton.TButton',
+        background=[('active', '#2FC07B'), ('pressed', '#25A76C')],
+    )
 
     canvas = tk.Canvas(form, bg=BASE_BG, highlightthickness=0)
     scrollbar = ttk.Scrollbar(form, orient="vertical", command=canvas.yview)
@@ -440,8 +443,11 @@ def launch_sap_support():
     style.configure('Support.TLabelframe.Label', background=PANEL_BG, foreground=ACCENT, font=('Segoe UI', 11, 'bold'))
     style.configure('Support.TLabel', background=PANEL_BG, foreground=TEXT_PRIMARY, font=('Segoe UI', 10))
     style.configure('Support.TEntry', fieldbackground=INPUT_BG, foreground=TEXT_PRIMARY, insertcolor=ACCENT, font=('Segoe UI', 10), borderwidth=1, relief='flat')
-    style.configure('SupportButton.TButton', background=POSITIVE, foreground='#1a1d29', padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
-    style.map('SupportButton.TButton', background=[('active', '#2dd4a3'), ('pressed', '#1fb885')])
+    style.configure('SupportButton.TButton', background=POSITIVE, foreground=TEXT_PRIMARY, padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.map(
+        'SupportButton.TButton',
+        background=[('active', '#2FC07B'), ('pressed', '#25A76C')],
+    )
 
     canvas = tk.Canvas(support_window, bg=BASE_BG, highlightthickness=0)
     scrollbar = ttk.Scrollbar(support_window, orient='vertical', command=canvas.yview)
@@ -596,8 +602,11 @@ def launch_sap_disable():
     style.configure('Disable.TLabelframe.Label', background=PANEL_BG, foreground=DANGER, font=('Segoe UI', 11, 'bold'))
     style.configure('Disable.TLabel', background=PANEL_BG, foreground=TEXT_PRIMARY, font=('Segoe UI', 10))
     style.configure('Disable.TEntry', fieldbackground=INPUT_BG, foreground=TEXT_PRIMARY, insertcolor=ACCENT, font=('Segoe UI', 10), borderwidth=1, relief='flat')
-    style.configure('DisableButton.TButton', background=DANGER, foreground='#ffffff', padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
-    style.map('DisableButton.TButton', background=[('active', '#ef4444'), ('pressed', '#dc2626')])
+    style.configure('DisableButton.TButton', background=DANGER, foreground=TEXT_PRIMARY, padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.map(
+        'DisableButton.TButton',
+        background=[('active', '#FF5470'), ('pressed', '#E54461')],
+    )
 
     canvas = tk.Canvas(disable_window, bg=BASE_BG, highlightthickness=0)
     scrollbar = ttk.Scrollbar(disable_window, orient='vertical', command=canvas.yview)
@@ -860,8 +869,11 @@ def launch_agile_creation() -> None:
     style.configure('Agile.TLabelframe.Label', background=PANEL_BG, foreground=ACCENT, font=('Segoe UI', 11, 'bold'))
     style.configure('Agile.TLabel', background=PANEL_BG, foreground=TEXT_PRIMARY, font=('Segoe UI', 10))
     style.configure('Agile.TEntry', fieldbackground=INPUT_BG, foreground=TEXT_PRIMARY, insertcolor=ACCENT, font=('Segoe UI', 10), borderwidth=1, relief='flat')
-    style.configure('AgileButton.TButton', background=POSITIVE, foreground='#ffffff', padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
-    style.map('AgileButton.TButton', background=[('active', '#059669'), ('pressed', '#047857')])
+    style.configure('AgileButton.TButton', background=POSITIVE, foreground=TEXT_PRIMARY, padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.map(
+        'AgileButton.TButton',
+        background=[('active', '#2FC07B'), ('pressed', '#25A76C')],
+    )
 
     canvas = tk.Canvas(window, bg=BASE_BG, highlightthickness=0)
     scrollbar = ttk.Scrollbar(window, orient='vertical', command=canvas.yview)
@@ -1106,8 +1118,11 @@ def launch_agile_reset() -> None:
     style.configure('AgileReset.TLabelframe.Label', background=PANEL_BG, foreground=ACCENT, font=('Segoe UI', 11, 'bold'))
     style.configure('AgileReset.TLabel', background=PANEL_BG, foreground=TEXT_PRIMARY, font=('Segoe UI', 10))
     style.configure('AgileReset.TEntry', fieldbackground=INPUT_BG, foreground=TEXT_PRIMARY, insertcolor=ACCENT, font=('Segoe UI', 10), borderwidth=1, relief='flat')
-    style.configure('AgileResetButton.TButton', background=DANGER, foreground='#ffffff', padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
-    style.map('AgileResetButton.TButton', background=[('active', '#ef4444'), ('pressed', '#dc2626')])
+    style.configure('AgileResetButton.TButton', background=DANGER, foreground=TEXT_PRIMARY, padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.map(
+        'AgileResetButton.TButton',
+        background=[('active', '#FF5470'), ('pressed', '#E54461')],
+    )
 
     canvas = tk.Canvas(window, bg=BASE_BG, highlightthickness=0)
     scrollbar = ttk.Scrollbar(window, orient='vertical', command=canvas.yview)
@@ -1260,18 +1275,18 @@ def launch_agile_reset() -> None:
 def build_telco_section(parent: tk.Widget) -> None:
     section = ttk.LabelFrame(parent, text="📞 Monthly Telco Bill Process", style='MainTech.TLabelframe')
     section.pack(fill='x', pady=(0, 20))
-    container = ttk.Frame(section, style='MainTech.TFrame')
+    container = ttk.Frame(section, style='MainTechCard.TFrame')
     container.pack(fill='x', padx=20, pady=16)
     
     # Warning label about signatures
-    warning_frame = tk.Frame(container, bg=WARNING, relief='solid', borderwidth=1)
+    warning_frame = tk.Frame(container, bg=WARNING, relief='flat', borderwidth=0, highlightbackground=BORDER_COLOR, highlightthickness=1)
     warning_frame.pack(fill='x', pady=(0, 15))
     warning_label = tk.Label(
         warning_frame,
         text="⚠ IMPORTANT: Please make sure there are 2 signatures for both Singtel and M1 before proceed with Automation tool",
         font=('Segoe UI', 10, 'bold'),
         bg=WARNING,
-        fg='#000000',
+        fg='#0B1118',
         wraplength=500,
         justify='left',
         padx=10,
@@ -1571,7 +1586,7 @@ def show_settings_dialog(root: tk.Tk) -> None:
     dialog = tk.Toplevel(root)
     dialog.title("Settings")
     dialog.geometry("780x600")
-    dialog.configure(bg='#1e1e1e')
+    dialog.configure(bg=BASE_BG)
 
     style = ttk.Style(dialog)
     style.configure('Settings.TFrame', background=BASE_BG)
@@ -1580,7 +1595,11 @@ def show_settings_dialog(root: tk.Tk) -> None:
     style.configure('Settings.TLabelframe.Label', background=PANEL_BG, foreground=ACCENT, font=('Consolas', 11, 'bold'))
     style.configure('Settings.TLabel', background=PANEL_BG, foreground=TEXT_PRIMARY, font=('Consolas', 10))
     style.configure('Settings.TEntry', fieldbackground=INPUT_BG, foreground=TEXT_PRIMARY, insertcolor=ACCENT, font=('Consolas', 10))
-    style.configure('SettingsButton.TButton', background=POSITIVE, foreground='#0f172a', padding=(12, 8), font=('Consolas', 11, 'bold'))
+    style.configure('SettingsButton.TButton', background=POSITIVE, foreground=TEXT_PRIMARY, padding=(12, 8), font=('Consolas', 11, 'bold'))
+    style.map(
+        'SettingsButton.TButton',
+        background=[('active', '#2FC07B'), ('pressed', '#25A76C')],
+    )
 
     active_profile = get_active_profile_name()
     profile_var = tk.StringVar(value=active_profile)
@@ -1612,7 +1631,7 @@ def show_settings_dialog(root: tk.Tk) -> None:
     notebook_container = ttk.Frame(dialog, style='Settings.TFrame')
     notebook_container.pack(fill='both', expand=True, padx=15, pady=15)
 
-    notebook_canvas = tk.Canvas(notebook_container, bg='#1e1e1e', highlightthickness=0)
+    notebook_canvas = tk.Canvas(notebook_container, bg=BASE_BG, highlightthickness=0)
     notebook_scrollbar = ttk.Scrollbar(notebook_container, orient='vertical', command=notebook_canvas.yview)
     notebook_canvas.pack(side='left', fill='both', expand=True)
     notebook_scrollbar.pack(side='right', fill='y')
@@ -1702,7 +1721,7 @@ def show_settings_dialog(root: tk.Tk) -> None:
     backups_list.pack(fill='both', expand=True, padx=12, pady=(0, 12))
 
     status_var = tk.StringVar()
-    status_label = ttk.Label(dialog, textvariable=status_var, foreground='#58a6ff', background='#1e1e1e', font=('Consolas', 10))
+    status_label = ttk.Label(dialog, textvariable=status_var, foreground=ACCENT, background=BASE_BG, font=('Consolas', 10))
     status_label.pack(fill='x', padx=15, pady=(0, 5))
 
     def populate_fields(profile_name: str) -> None:

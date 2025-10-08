@@ -9,6 +9,16 @@ from tkinter import ttk
 from activity_log import describe_event, get_recent_events, log_event, register_listener
 from config_manager import get_active_profile_name
 from ui import (
+    ACCENT,
+    BASE_BG,
+    DANGER,
+    INFO_ACCENT,
+    INPUT_BG,
+    PANEL_BG,
+    POSITIVE,
+    SECONDARY_ACCENT,
+    TEXT_MUTED,
+    TEXT_PRIMARY,
     build_agile_section,
     build_sap_section,
     build_telco_section,
@@ -40,31 +50,34 @@ def create_main_gui() -> None:
     root = tk.Tk()
     root.title("IT ! IT - Modern Admin Toolkit")
 
-    base_bg = '#1a1d29'
-    panel_bg = '#242837'
-    accent = '#60a5fa'
-    positive = '#34d399'
-    info_bg = '#3b82f6'
-    danger_bg = '#f87171'
-    text_primary = '#f1f5f9'
-    text_muted = '#94a3b8'
-
-    root.configure(bg=base_bg)
+    root.configure(bg=BASE_BG)
 
     style = ttk.Style()
     style.theme_use('clam')
-    style.configure('MainTech.TFrame', background=base_bg, relief='flat')
-    style.configure('MainTech.TLabelframe', background=panel_bg, foreground=accent, borderwidth=0, relief='flat', padding=24)
-    style.configure('MainTech.TLabelframe.Label', background=panel_bg, foreground=accent, font=('Segoe UI', 11, 'bold'))
-    style.configure('MainTechButton.TButton', background=positive, foreground='#ffffff', borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
-    style.map('MainTechButton.TButton', background=[('active', '#059669'), ('pressed', '#047857')], relief=[('pressed', 'flat')])
-    style.configure('InfoButton.TButton', background=info_bg, foreground='#ffffff', borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
-    style.map('InfoButton.TButton', background=[('active', '#0284c7'), ('pressed', '#0369a1')])
-    style.configure('DangerButton.TButton', background=danger_bg, foreground='#ffffff', borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
-    style.map('DangerButton.TButton', background=[('active', '#dc2626'), ('pressed', '#b91c1c')])
-    style.configure('MainTech.TNotebook', background=base_bg, borderwidth=0)
-    style.configure('MainTech.TNotebook.Tab', background=panel_bg, foreground=text_primary, padding=(18, 10), font=('Segoe UI', 10, 'bold'))
-    style.map('MainTech.TNotebook.Tab', background=[('selected', accent)], foreground=[('selected', '#0f172a')])
+    style.configure('MainTech.TFrame', background=BASE_BG, relief='flat')
+    style.configure('MainTechCard.TFrame', background=PANEL_BG, relief='flat', borderwidth=1)
+    style.configure('MainTech.TLabelframe', background=PANEL_BG, foreground=ACCENT, borderwidth=1, relief='flat', padding=24)
+    style.configure('MainTech.TLabelframe.Label', background=PANEL_BG, foreground=ACCENT, font=('Segoe UI', 11, 'bold'))
+    style.configure('MainTechButton.TButton', background=POSITIVE, foreground=TEXT_PRIMARY, borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.map(
+        'MainTechButton.TButton',
+        background=[('active', '#2FC07B'), ('pressed', '#25A76C')],
+        relief=[('pressed', 'flat')],
+    )
+    style.configure('InfoButton.TButton', background=INFO_ACCENT, foreground=TEXT_PRIMARY, borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.map(
+        'InfoButton.TButton',
+        background=[('active', '#7A6CFF'), ('pressed', '#6957F0')],
+    )
+    style.configure('DangerButton.TButton', background=DANGER, foreground=TEXT_PRIMARY, borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.map(
+        'DangerButton.TButton',
+        background=[('active', '#FF5470'), ('pressed', '#E54461')],
+    )
+    style.configure('MainTech.TNotebook', background=BASE_BG, borderwidth=0)
+    style.configure('MainTech.TNotebook.Tab', background=PANEL_BG, foreground=TEXT_MUTED, padding=(18, 10), font=('Segoe UI', 10, 'bold'))
+    style.map('MainTech.TNotebook.Tab', background=[('selected', ACCENT)], foreground=[('selected', TEXT_PRIMARY)])
+    style.configure('Vertical.TScrollbar', troughcolor=BASE_BG, background=PANEL_BG, arrowcolor=TEXT_PRIMARY, bordercolor=PANEL_BG)
 
     screen_width, screen_height = root.winfo_screenwidth(), root.winfo_screenheight()
     window_width = min(max(800, int(screen_width * 0.7)), 1200)
@@ -84,10 +97,10 @@ def create_main_gui() -> None:
 
     status_message_var = tk.StringVar(value="Ready")
 
-    content_container = tk.Frame(root, bg=base_bg)
+    content_container = tk.Frame(root, bg=BASE_BG)
     content_container.pack(fill='both', expand=True)
 
-    main_canvas = tk.Canvas(content_container, bg=base_bg, highlightthickness=0)
+    main_canvas = tk.Canvas(content_container, bg=BASE_BG, highlightthickness=0)
     scrollbar = ttk.Scrollbar(content_container, orient='vertical', command=main_canvas.yview)
     scrollable_frame = ttk.Frame(main_canvas, style='MainTech.TFrame')
 
@@ -122,13 +135,21 @@ def create_main_gui() -> None:
 
     header = ttk.Frame(scrollable_frame, style='MainTech.TFrame')
     header.pack(fill='x', pady=(20, 40))
-    tk.Label(header, text=ASCII_BANNER, font=('Consolas', 5), bg=base_bg, fg='#ff6b6b', justify='center').pack()
-    tk.Label(header, text='// INGRASYS IT ADMIN AUTOMATION TOOLKIT', font=('Segoe UI', 14, 'bold'), bg=base_bg, fg=text_primary).pack(pady=(10, 2))
-    tk.Label(header, text='// COLLAB WITH CODEX&CLAUDE', font=('Segoe UI', 10), bg=base_bg, fg=text_muted).pack()
+    tk.Label(header, text=ASCII_BANNER, font=('Consolas', 5), bg=BASE_BG, fg=SECONDARY_ACCENT, justify='center').pack()
+    tk.Label(header, text='// INGRASYS IT ADMIN AUTOMATION TOOLKIT', font=('Segoe UI', 14, 'bold'), bg=BASE_BG, fg=TEXT_PRIMARY).pack(pady=(10, 2))
+    tk.Label(header, text='// COLLAB WITH CODEX&CLAUDE', font=('Segoe UI', 10), bg=BASE_BG, fg=TEXT_MUTED).pack()
 
-    status_frame = tk.Frame(header, bg=base_bg)
+    status_frame = tk.Frame(header, bg=BASE_BG)
     status_frame.pack(pady=(15, 0))
-    status_label = tk.Label(status_frame, font=('Segoe UI', 9), bg='#1e3a2e', fg='#34d399', padx=16, pady=6, relief='flat')
+    status_label = tk.Label(
+        status_frame,
+        font=('Segoe UI', 9),
+        bg=INPUT_BG,
+        fg=POSITIVE,
+        padx=16,
+        pady=6,
+        relief='flat',
+    )
     status_label.pack()
 
     def refresh_online_badge() -> None:
@@ -177,12 +198,12 @@ def create_main_gui() -> None:
 
             header_frame = ttk.Frame(self.container, style='MainTech.TFrame')
             header_frame.pack(fill='x', pady=(0, 12))
-            tk.Label(header_frame, text='📜 Recent Activity Log', font=('Segoe UI', 14, 'bold'), bg=base_bg, fg=text_primary).pack(side='left')
+            tk.Label(header_frame, text='📜 Recent Activity Log', font=('Segoe UI', 14, 'bold'), bg=BASE_BG, fg=TEXT_PRIMARY).pack(side='left')
             ttk.Button(header_frame, text='Refresh', style='InfoButton.TButton', command=self.refresh).pack(side='right')
 
-            body = tk.Frame(self.container, bg=panel_bg, highlightthickness=0)
+            body = tk.Frame(self.container, bg=PANEL_BG, highlightthickness=0)
             body.pack(fill='both', expand=True)
-            self.text = tk.Text(body, bg=panel_bg, fg=text_primary, insertbackground=accent, font=('Consolas', 10), wrap='word', borderwidth=0, relief='flat', state='disabled')
+            self.text = tk.Text(body, bg=PANEL_BG, fg=TEXT_PRIMARY, insertbackground=ACCENT, font=('Consolas', 10), wrap='word', borderwidth=0, relief='flat', state='disabled')
             self.text.pack(side='left', fill='both', expand=True)
             scrollbar_inner = ttk.Scrollbar(body, orient='vertical', command=self.text.yview)
             scrollbar_inner.pack(side='right', fill='y')
@@ -242,11 +263,11 @@ def create_main_gui() -> None:
     register_listener(on_log_entry)
     log_event('ui', 'Operator console launched', details={'profile': active_profile_var.get()})
 
-    status_bar = tk.Frame(root, bg=panel_bg)
+    status_bar = tk.Frame(root, bg=PANEL_BG)
     status_bar.pack(fill='x', side='bottom')
-    tk.Label(status_bar, textvariable=environment_display_var, font=('Segoe UI', 10, 'bold'), bg=panel_bg, fg=accent).pack(side='left', padx=16, pady=8)
-    tk.Label(status_bar, textvariable=status_message_var, font=('Segoe UI', 9), bg=panel_bg, fg=text_primary, anchor='w').pack(side='left', padx=12)
-    tk.Label(status_bar, text='Press ESC to exit • Use ⚙ Settings to manage configuration', font=('Segoe UI', 9), bg=panel_bg, fg=text_muted).pack(side='right', padx=16)
+    tk.Label(status_bar, textvariable=environment_display_var, font=('Segoe UI', 10, 'bold'), bg=PANEL_BG, fg=ACCENT).pack(side='left', padx=16, pady=8)
+    tk.Label(status_bar, textvariable=status_message_var, font=('Segoe UI', 9), bg=PANEL_BG, fg=TEXT_PRIMARY, anchor='w').pack(side='left', padx=12)
+    tk.Label(status_bar, text='Press ESC to exit • Use ⚙ Settings to manage configuration', font=('Segoe UI', 9), bg=PANEL_BG, fg=TEXT_MUTED).pack(side='right', padx=16)
 
     root.after(100, initialize_window)
     root.mainloop()

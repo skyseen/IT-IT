@@ -4,6 +4,7 @@ IT-IT is a desktop automation suite that streamlines day-to-day IT operations su
 
 ## Key Features
 - **Centralized dashboard** – Launch user management, SAP, Agile, and telco workflows from a single window with contextual guidance for each task.
+- **Beauty-tech noir styling** – Updated dark-tech palette with luminous accents keeps copy crisp while aligning with the new design brief.
 - **Configurable automation** – Store environment-specific paths, email recipient lists, and signature blocks in `it_tool_config.json`, editable through the in-app settings dialog.
 - **Email generation** – Produce Outlook-ready messages (plain text or HTML with inline images) for new hires, account disables, SAP tickets, Agile access updates, and telco notifications.
 - **Excel processing** – Convert user intake forms into standardized templates, reconcile SAP request spreadsheets, and update monthly telecom billing workbooks.
@@ -31,6 +32,10 @@ IT-IT is a desktop automation suite that streamlines day-to-day IT operations su
    python app.py
    ```
 5. Use the **Settings** button within the app to adjust configuration values without editing JSON directly.
+
+
+## Exploring Alternative UI Frameworks
+If you need a richer, glass-inspired interface than Tkinter can comfortably provide, review [`docs/gui_framework_options.md`](docs/gui_framework_options.md). It outlines a PySide6 migration path, including a runnable prototype (`python prototypes/pyside6_app.py`) that demonstrates the updated aesthetic, plus notes on other desktop stacks worth considering.
 
 ## Contributing
 For internal teams, please:
