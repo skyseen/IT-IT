@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+from pathlib import Path
 from typing import Callable, Optional
 
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -178,6 +179,12 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.setWindowTitle("IT!IT OA Tool")
         self.resize(1240, 820)
+        
+        # Set window icon (taskbar and title bar)
+        # Place your logo.png or logo.ico in the project root
+        icon_path = "logo.png"  # or "logo.ico"
+        if Path(icon_path).exists():
+            self.setWindowIcon(QtGui.QIcon(icon_path))
 
         central = QtWidgets.QWidget()
         self.setCentralWidget(central)
