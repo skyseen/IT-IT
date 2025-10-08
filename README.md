@@ -32,6 +32,10 @@ IT-IT is a desktop automation suite that streamlines day-to-day IT operations su
    ```
 5. Use the **Settings** button within the app to adjust configuration values without editing JSON directly.
 
+
+## Exploring Alternative UI Frameworks
+If you need a richer, glass-inspired interface than Tkinter can comfortably provide, review [`docs/gui_framework_options.md`](docs/gui_framework_options.md). It outlines a PySide6 migration path, including a runnable prototype (`python prototypes/pyside6_app.py`) that demonstrates the updated aesthetic, plus notes on other desktop stacks worth considering.
+
 ## Contributing
 For internal teams, please:
 1. Fork this repository and create a feature branch.
