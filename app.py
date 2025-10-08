@@ -13,7 +13,6 @@ from ui import (
     BASE_BG,
     DANGER,
     INFO_ACCENT,
-    INPUT_BG,
     PANEL_BG,
     POSITIVE,
     SECONDARY_ACCENT,
@@ -55,29 +54,27 @@ def create_main_gui() -> None:
     style = ttk.Style()
     style.theme_use('clam')
     style.configure('MainTech.TFrame', background=BASE_BG, relief='flat')
-    style.configure('MainTechCard.TFrame', background=PANEL_BG, relief='flat', borderwidth=1)
-    style.configure('MainTech.TLabelframe', background=PANEL_BG, foreground=ACCENT, borderwidth=1, relief='flat', padding=24)
+    style.configure('MainTech.TLabelframe', background=PANEL_BG, foreground=ACCENT, borderwidth=0, relief='flat', padding=24)
     style.configure('MainTech.TLabelframe.Label', background=PANEL_BG, foreground=ACCENT, font=('Segoe UI', 11, 'bold'))
-    style.configure('MainTechButton.TButton', background=POSITIVE, foreground=TEXT_PRIMARY, borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.configure('MainTechButton.TButton', background=POSITIVE, foreground='#ffffff', borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
     style.map(
         'MainTechButton.TButton',
-        background=[('active', '#2FC07B'), ('pressed', '#25A76C')],
+        background=[('active', '#68B491'), ('pressed', '#5AA884')],
         relief=[('pressed', 'flat')],
     )
-    style.configure('InfoButton.TButton', background=INFO_ACCENT, foreground=TEXT_PRIMARY, borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.configure('InfoButton.TButton', background=INFO_ACCENT, foreground='#ffffff', borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
     style.map(
         'InfoButton.TButton',
-        background=[('active', '#7A6CFF'), ('pressed', '#6957F0')],
+        background=[('active', '#887BFF'), ('pressed', '#7766F6')],
     )
-    style.configure('DangerButton.TButton', background=DANGER, foreground=TEXT_PRIMARY, borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.configure('DangerButton.TButton', background=DANGER, foreground='#ffffff', borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
     style.map(
         'DangerButton.TButton',
-        background=[('active', '#FF5470'), ('pressed', '#E54461')],
+        background=[('active', '#D07A77'), ('pressed', '#C06764')],
     )
     style.configure('MainTech.TNotebook', background=BASE_BG, borderwidth=0)
     style.configure('MainTech.TNotebook.Tab', background=PANEL_BG, foreground=TEXT_MUTED, padding=(18, 10), font=('Segoe UI', 10, 'bold'))
-    style.map('MainTech.TNotebook.Tab', background=[('selected', ACCENT)], foreground=[('selected', TEXT_PRIMARY)])
-    style.configure('Vertical.TScrollbar', troughcolor=BASE_BG, background=PANEL_BG, arrowcolor=TEXT_PRIMARY, bordercolor=PANEL_BG)
+    style.map('MainTech.TNotebook.Tab', background=[('selected', ACCENT)], foreground=[('selected', '#ffffff')])
 
     screen_width, screen_height = root.winfo_screenwidth(), root.winfo_screenheight()
     window_width = min(max(800, int(screen_width * 0.7)), 1200)
@@ -144,7 +141,7 @@ def create_main_gui() -> None:
     status_label = tk.Label(
         status_frame,
         font=('Segoe UI', 9),
-        bg=INPUT_BG,
+        bg='#EEF6F3',
         fg=POSITIVE,
         padx=16,
         pady=6,

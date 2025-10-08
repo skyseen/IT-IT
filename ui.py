@@ -36,20 +36,20 @@ from email_service import (
     send_m1_telco_email,
 )
 
-# Beauty-Tech Inspired Dark Tech Theme
-BASE_BG = '#0B1118'  # Deep midnight backdrop
-PANEL_BG = '#141B26'  # Elevated card surface
-INPUT_BG = '#1C2533'  # Inked input cradle
-ACCENT = '#5E8BFF'  # Electric azure accent
-SECONDARY_ACCENT = '#FF8AD6'  # Neon rose highlight
-POSITIVE = '#39D98A'  # Vibrant success green
-INFO_ACCENT = '#8A7CFF'  # Ultraviolet info tone
-WARNING = '#F7B94B'  # Amber warning pulse
-DANGER = '#FF6B81'  # Vivid coral for destructive actions
-TEXT_PRIMARY = '#F5F7FF'  # Luminous primary text
-TEXT_MUTED = '#9FB3C8'  # Muted slate secondary text
-BORDER_COLOR = '#1F2A3A'  # Subtle divider
-SHADOW_COLOR = '#04070C'  # Depth shadow
+# Beauty-Tech Inspired Light Theme
+BASE_BG = '#F9F6FB'  # Airy neutral base
+PANEL_BG = '#FFFFFF'  # Clean cards and panels
+INPUT_BG = '#FDF8FB'  # Soft blush input fields
+ACCENT = '#8AA7FF'  # Cool tech accent
+SECONDARY_ACCENT = '#D9A5B3'  # Rose-gold highlight
+POSITIVE = '#7CC3A2'  # Mint confirmation tone
+INFO_ACCENT = '#9E8CFF'  # Lavender info tone
+WARNING = '#F4C989'  # Champagne warning tone
+DANGER = '#E69896'  # Calm coral for destructive actions
+TEXT_PRIMARY = '#2F2635'  # Deep plum text
+TEXT_MUTED = '#6F6475'  # Muted lilac-gray secondary text
+BORDER_COLOR = '#E8DBEC'  # Gentle divider
+SHADOW_COLOR = '#E4D7EA'  # Diffused shadow
 from user_workflow import generate_user_workbooks
 from sap_workflows import (
     build_preview_window,
@@ -170,10 +170,10 @@ def build_multiuser_form(root: tk.Tk, title: str, labels: List[str], submit_hand
     style.configure('Tech.TLabelframe.Label', background=PANEL_BG, foreground=ACCENT, font=('Segoe UI', 11, 'bold'))
     style.configure('Tech.TLabel', background=PANEL_BG, foreground=TEXT_PRIMARY, font=('Segoe UI', 10))
     style.configure('Tech.TEntry', fieldbackground=INPUT_BG, foreground=TEXT_PRIMARY, borderwidth=1, insertcolor=ACCENT, font=('Segoe UI', 10), relief='flat')
-    style.configure('TechButton.TButton', background=POSITIVE, foreground=TEXT_PRIMARY, borderwidth=0, padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.configure('TechButton.TButton', background=POSITIVE, foreground='#ffffff', borderwidth=0, padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
     style.map(
         'TechButton.TButton',
-        background=[('active', '#2FC07B'), ('pressed', '#25A76C')],
+        background=[('active', '#68B491'), ('pressed', '#5AA884')],
     )
 
     canvas = tk.Canvas(form, bg=BASE_BG, highlightthickness=0)
@@ -443,10 +443,10 @@ def launch_sap_support():
     style.configure('Support.TLabelframe.Label', background=PANEL_BG, foreground=ACCENT, font=('Segoe UI', 11, 'bold'))
     style.configure('Support.TLabel', background=PANEL_BG, foreground=TEXT_PRIMARY, font=('Segoe UI', 10))
     style.configure('Support.TEntry', fieldbackground=INPUT_BG, foreground=TEXT_PRIMARY, insertcolor=ACCENT, font=('Segoe UI', 10), borderwidth=1, relief='flat')
-    style.configure('SupportButton.TButton', background=POSITIVE, foreground=TEXT_PRIMARY, padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.configure('SupportButton.TButton', background=POSITIVE, foreground='#ffffff', padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
     style.map(
         'SupportButton.TButton',
-        background=[('active', '#2FC07B'), ('pressed', '#25A76C')],
+        background=[('active', '#68B491'), ('pressed', '#5AA884')],
     )
 
     canvas = tk.Canvas(support_window, bg=BASE_BG, highlightthickness=0)
@@ -602,10 +602,10 @@ def launch_sap_disable():
     style.configure('Disable.TLabelframe.Label', background=PANEL_BG, foreground=DANGER, font=('Segoe UI', 11, 'bold'))
     style.configure('Disable.TLabel', background=PANEL_BG, foreground=TEXT_PRIMARY, font=('Segoe UI', 10))
     style.configure('Disable.TEntry', fieldbackground=INPUT_BG, foreground=TEXT_PRIMARY, insertcolor=ACCENT, font=('Segoe UI', 10), borderwidth=1, relief='flat')
-    style.configure('DisableButton.TButton', background=DANGER, foreground=TEXT_PRIMARY, padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.configure('DisableButton.TButton', background=DANGER, foreground='#ffffff', padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
     style.map(
         'DisableButton.TButton',
-        background=[('active', '#FF5470'), ('pressed', '#E54461')],
+        background=[('active', '#D07A77'), ('pressed', '#C06764')],
     )
 
     canvas = tk.Canvas(disable_window, bg=BASE_BG, highlightthickness=0)
@@ -869,10 +869,10 @@ def launch_agile_creation() -> None:
     style.configure('Agile.TLabelframe.Label', background=PANEL_BG, foreground=ACCENT, font=('Segoe UI', 11, 'bold'))
     style.configure('Agile.TLabel', background=PANEL_BG, foreground=TEXT_PRIMARY, font=('Segoe UI', 10))
     style.configure('Agile.TEntry', fieldbackground=INPUT_BG, foreground=TEXT_PRIMARY, insertcolor=ACCENT, font=('Segoe UI', 10), borderwidth=1, relief='flat')
-    style.configure('AgileButton.TButton', background=POSITIVE, foreground=TEXT_PRIMARY, padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.configure('AgileButton.TButton', background=POSITIVE, foreground='#ffffff', padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
     style.map(
         'AgileButton.TButton',
-        background=[('active', '#2FC07B'), ('pressed', '#25A76C')],
+        background=[('active', '#68B491'), ('pressed', '#5AA884')],
     )
 
     canvas = tk.Canvas(window, bg=BASE_BG, highlightthickness=0)
@@ -1118,10 +1118,10 @@ def launch_agile_reset() -> None:
     style.configure('AgileReset.TLabelframe.Label', background=PANEL_BG, foreground=ACCENT, font=('Segoe UI', 11, 'bold'))
     style.configure('AgileReset.TLabel', background=PANEL_BG, foreground=TEXT_PRIMARY, font=('Segoe UI', 10))
     style.configure('AgileReset.TEntry', fieldbackground=INPUT_BG, foreground=TEXT_PRIMARY, insertcolor=ACCENT, font=('Segoe UI', 10), borderwidth=1, relief='flat')
-    style.configure('AgileResetButton.TButton', background=DANGER, foreground=TEXT_PRIMARY, padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
+    style.configure('AgileResetButton.TButton', background=DANGER, foreground='#ffffff', padding=(14, 10), font=('Segoe UI', 10, 'bold'), relief='flat')
     style.map(
         'AgileResetButton.TButton',
-        background=[('active', '#FF5470'), ('pressed', '#E54461')],
+        background=[('active', '#D07A77'), ('pressed', '#C06764')],
     )
 
     canvas = tk.Canvas(window, bg=BASE_BG, highlightthickness=0)
@@ -1595,10 +1595,10 @@ def show_settings_dialog(root: tk.Tk) -> None:
     style.configure('Settings.TLabelframe.Label', background=PANEL_BG, foreground=ACCENT, font=('Consolas', 11, 'bold'))
     style.configure('Settings.TLabel', background=PANEL_BG, foreground=TEXT_PRIMARY, font=('Consolas', 10))
     style.configure('Settings.TEntry', fieldbackground=INPUT_BG, foreground=TEXT_PRIMARY, insertcolor=ACCENT, font=('Consolas', 10))
-    style.configure('SettingsButton.TButton', background=POSITIVE, foreground=TEXT_PRIMARY, padding=(12, 8), font=('Consolas', 11, 'bold'))
+    style.configure('SettingsButton.TButton', background=POSITIVE, foreground='#ffffff', padding=(12, 8), font=('Consolas', 11, 'bold'))
     style.map(
         'SettingsButton.TButton',
-        background=[('active', '#2FC07B'), ('pressed', '#25A76C')],
+        background=[('active', '#68B491'), ('pressed', '#5AA884')],
     )
 
     active_profile = get_active_profile_name()
