@@ -1,23 +1,18 @@
-"""Application entry point for IT admin tool."""
-
 from __future__ import annotations
 
 import datetime
-import tkinter as tk
-from tkinter import ttk
+from typing import Callable, Optional
+
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from activity_log import describe_event, get_recent_events, log_event, register_listener
 from config_manager import get_active_profile_name
 from ui import (
     ACCENT,
-    BASE_BG,
-    DANGER,
-    INFO_ACCENT,
-    PANEL_BG,
-    POSITIVE,
-    SECONDARY_ACCENT,
+    SUCCESS,
     TEXT_MUTED,
     TEXT_PRIMARY,
+    apply_dark_tech_palette,
     build_agile_section,
     build_sap_section,
     build_telco_section,
@@ -25,250 +20,203 @@ from ui import (
     show_settings_dialog,
 )
 
-
 ASCII_BANNER = """
-                ,----,   ,---,                 ,----,
-              ,/   .`|,`--.' |               ,/   .`|
-   ,---,    ,`   .'  :|   :  :    ,---,    ,`   .'  :
-,`--.' |  ;    ;     /'   '  ; ,`--.' |  ;    ;     /
-|   :  :.'___,/    ,' |   |  | |   :  :.'___,/    ,'
-:   |  '|    :     |  '   :  ; :   |  '|    :     |
-|   :  |;    |.';  ;  |   |  ' |   :  |;    |.';  ;
-'   '  ;`----'  |  |  '   :  | '   '  ;`----'  |  |
-|   |  |    '   :  ;  ;   |  ; |   |  |    '   :  ;
-'   :  ;    |   |  '  `---'. | '   :  ;    |   |  '
-|   |  '    '   :  |   `--..`; |   |  '    '   :  |
-'   :  |    ;   |.'   .--,_    '   :  |    ;   |.'
-;   |.'     '---'     |    |`. ;   |.'     '---'
-'---'                 `-- -`, ;'---'
-                        '---`
+██╗████████╗    ██╗ ██████╗     ██╗████████╗
+██║╚══██╔══╝    ██║██╔════╝     ██║╚══██╔══╝
+██║   ██║       ██║██║  ███╗    ██║   ██║   
+██║   ██║  ██   ██║██║   ██║    ██║   ██║   
+██║   ██║  ╚█████╔╝╚██████╔╝    ██║   ██║   
+╚═╝   ╚═╝   ╚════╝  ╚═════╝     ╚═╝   ╚═╝   
 """
 
 
-def create_main_gui() -> None:
-    root = tk.Tk()
-    root.title("IT ! IT - Modern Admin Toolkit")
+class ActivityPanel(QtWidgets.QGroupBox):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        super().__init__("Operations Center", parent)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(12)
 
-    root.configure(bg=BASE_BG)
+        self.text = QtWidgets.QTextEdit()
+        self.text.setReadOnly(True)
+        self.text.setLineWrapMode(QtWidgets.QTextEdit.LineWrapMode.WidgetWidth)
+        self.text.setPlaceholderText("Activity log will appear here…")
+        layout.addWidget(self.text, 1)
 
-    style = ttk.Style()
-    style.theme_use('clam')
-    style.configure('MainTech.TFrame', background=BASE_BG, relief='flat')
-    style.configure('MainTech.TLabelframe', background=PANEL_BG, foreground=ACCENT, borderwidth=0, relief='flat', padding=24)
-    style.configure('MainTech.TLabelframe.Label', background=PANEL_BG, foreground=ACCENT, font=('Segoe UI', 11, 'bold'))
-    style.configure('MainTechButton.TButton', background=POSITIVE, foreground='#ffffff', borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
-    style.map(
-        'MainTechButton.TButton',
-        background=[('active', '#68B491'), ('pressed', '#5AA884')],
-        relief=[('pressed', 'flat')],
-    )
-    style.configure('InfoButton.TButton', background=INFO_ACCENT, foreground='#ffffff', borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
-    style.map(
-        'InfoButton.TButton',
-        background=[('active', '#887BFF'), ('pressed', '#7766F6')],
-    )
-    style.configure('DangerButton.TButton', background=DANGER, foreground='#ffffff', borderwidth=0, padding=(20, 14), font=('Segoe UI', 10, 'bold'), relief='flat')
-    style.map(
-        'DangerButton.TButton',
-        background=[('active', '#D07A77'), ('pressed', '#C06764')],
-    )
-    style.configure('MainTech.TNotebook', background=BASE_BG, borderwidth=0)
-    style.configure('MainTech.TNotebook.Tab', background=PANEL_BG, foreground=TEXT_MUTED, padding=(18, 10), font=('Segoe UI', 10, 'bold'))
-    style.map('MainTech.TNotebook.Tab', background=[('selected', ACCENT)], foreground=[('selected', '#ffffff')])
+        refresh = QtWidgets.QPushButton("Refresh Feed")
+        refresh.clicked.connect(self.refresh)
+        layout.addWidget(refresh)
 
-    screen_width, screen_height = root.winfo_screenwidth(), root.winfo_screenheight()
-    window_width = min(max(800, int(screen_width * 0.7)), 1200)
-    window_height = min(max(600, int(screen_height * 0.8)), 900)
-    root.geometry(f"{window_width}x{window_height}")
-    root.minsize(760, 520)
+        self.refresh()
 
-    active_profile_var = tk.StringVar(value=get_active_profile_name())
-    root.active_profile_var = active_profile_var
-    environment_display_var = tk.StringVar()
+    def refresh(self) -> None:
+        events = get_recent_events(limit=120)
+        lines = [describe_event(entry) for entry in events]
+        self.text.setPlainText("\n".join(lines))
+        self.text.verticalScrollBar().setValue(self.text.verticalScrollBar().maximum())
 
-    def update_environment_display(*_args: object) -> None:
-        environment_display_var.set(f"Environment: {active_profile_var.get()}")
+    def append(self, entry: dict) -> None:
+        cursor = self.text.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.MoveOperation.End)
+        cursor.insertText(describe_event(entry) + "\n")
+        self.text.setTextCursor(cursor)
+        self.text.verticalScrollBar().setValue(self.text.verticalScrollBar().maximum())
 
-    active_profile_var.trace_add('write', update_environment_display)
-    update_environment_display()
 
-    status_message_var = tk.StringVar(value="Ready")
+class HeroHeader(QtWidgets.QFrame):
+    settings_requested = QtCore.Signal()
 
-    content_container = tk.Frame(root, bg=BASE_BG)
-    content_container.pack(fill='both', expand=True)
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setObjectName("heroHeader")
+        self.setStyleSheet(
+            """
+            QFrame#heroHeader {
+                background-color: rgba(20, 36, 59, 0.72);
+                border: 1px solid rgba(56, 189, 248, 0.25);
+                border-radius: 24px;
+            }
+            """
+        )
 
-    main_canvas = tk.Canvas(content_container, bg=BASE_BG, highlightthickness=0)
-    scrollbar = ttk.Scrollbar(content_container, orient='vertical', command=main_canvas.yview)
-    scrollable_frame = ttk.Frame(main_canvas, style='MainTech.TFrame')
+        layout = QtWidgets.QGridLayout(self)
+        layout.setContentsMargins(32, 28, 32, 28)
+        layout.setHorizontalSpacing(32)
+        layout.setVerticalSpacing(12)
 
-    def update_scroll_region(event: object | None = None) -> None:
-        main_canvas.configure(scrollregion=main_canvas.bbox('all'))
-        window_items = main_canvas.find_withtag('content_window')
-        if window_items:
-            canvas_width = main_canvas.winfo_width()
-            frame_width = scrollable_frame.winfo_reqwidth()
-            x_pos = max(0, (canvas_width - frame_width) // 2)
-            main_canvas.coords(window_items[0], x_pos, 0)
+        banner = QtWidgets.QLabel(ASCII_BANNER)
+        banner.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignTop)
+        banner.setStyleSheet("font-family: 'Fira Code', 'Consolas'; font-size: 11px; color: rgba(148, 163, 184, 0.75);")
 
-    scrollable_frame.bind('<Configure>', update_scroll_region)
-    main_canvas.create_window((0, 0), window=scrollable_frame, anchor='n', tags='content_window')
-    main_canvas.configure(yscrollcommand=scrollbar.set)
-    main_canvas.pack(side='left', fill='both', expand=True)
+        title = QtWidgets.QLabel("IT ! IT Automation Cockpit")
+        title.setStyleSheet("font-size: 26px; font-weight: 700; letter-spacing: 0.04em;")
 
-    def on_canvas_configure(event: object) -> None:
-        update_scroll_region()
-        if main_canvas.bbox('all') and main_canvas.bbox('all')[3] > main_canvas.winfo_height():
-            scrollbar.pack(side='right', fill='y')
-        else:
-            scrollbar.pack_forget()
+        subtitle = QtWidgets.QLabel(
+            "Dark-tech control center for orchestrating onboarding, SAP, Agile, and telco workflows."
+        )
+        subtitle.setWordWrap(True)
+        subtitle.setStyleSheet(f"color: {TEXT_MUTED}; font-size: 13px; letter-spacing: 0.06em;")
 
-    main_canvas.bind('<Configure>', on_canvas_configure)
+        self.status_badge = QtWidgets.QLabel()
+        self.status_badge.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.status_badge.setMinimumWidth(220)
+        self.status_badge.setStyleSheet(
+            f"background-color: rgba(56, 189, 248, 0.12); color: {ACCENT}; padding: 12px 16px;"
+            "border-radius: 16px; font-weight: 600;"
+        )
 
-    def _on_mousewheel(event: tk.Event) -> None:
-        main_canvas.yview_scroll(int(-1 * (event.delta / 120)), 'units')
+        self.settings_button = QtWidgets.QPushButton("⚙ Settings")
+        self.settings_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.settings_button.setStyleSheet(
+            f"background-color: {ACCENT}; color: #051221; font-weight: 700; padding: 12px 18px;"
+        )
+        self.settings_button.clicked.connect(self.settings_requested.emit)
 
-    main_canvas.bind('<Enter>', lambda _: main_canvas.bind_all('<MouseWheel>', _on_mousewheel))
-    main_canvas.bind('<Leave>', lambda _: main_canvas.unbind_all('<MouseWheel>'))
+        layout.addWidget(banner, 0, 0, 2, 1)
+        layout.addWidget(title, 0, 1)
+        layout.addWidget(subtitle, 1, 1)
+        layout.addWidget(self.status_badge, 0, 2, 2, 1)
+        layout.addWidget(self.settings_button, 2, 2)
 
-    header = ttk.Frame(scrollable_frame, style='MainTech.TFrame')
-    header.pack(fill='x', pady=(20, 40))
-    tk.Label(header, text=ASCII_BANNER, font=('Consolas', 5), bg=BASE_BG, fg=SECONDARY_ACCENT, justify='center').pack()
-    tk.Label(header, text='// INGRASYS IT ADMIN AUTOMATION TOOLKIT', font=('Segoe UI', 14, 'bold'), bg=BASE_BG, fg=TEXT_PRIMARY).pack(pady=(10, 2))
-    tk.Label(header, text='// COLLAB WITH CODEX&CLAUDE', font=('Segoe UI', 10), bg=BASE_BG, fg=TEXT_MUTED).pack()
+    def update_badge(self, profile: str) -> None:
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        self.status_badge.setText(f"● {profile} • {now}")
 
-    status_frame = tk.Frame(header, bg=BASE_BG)
-    status_frame.pack(pady=(15, 0))
-    status_label = tk.Label(
-        status_frame,
-        font=('Segoe UI', 9),
-        bg='#EEF6F3',
-        fg=POSITIVE,
-        padx=16,
-        pady=6,
-        relief='flat',
-    )
-    status_label.pack()
 
-    def refresh_online_badge() -> None:
-        status_label.config(text=f"● {active_profile_var.get()} • {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self) -> None:
+        super().__init__()
+        self.setWindowTitle("IT ! IT – Dark Tech Edition")
+        self.resize(1240, 820)
 
-    def schedule_badge_refresh() -> None:
-        refresh_online_badge()
-        root.after(60000, schedule_badge_refresh)
+        central = QtWidgets.QWidget()
+        self.setCentralWidget(central)
+        root_layout = QtWidgets.QVBoxLayout(central)
+        root_layout.setContentsMargins(32, 28, 32, 24)
+        root_layout.setSpacing(24)
 
-    schedule_badge_refresh()
-    active_profile_var.trace_add('write', lambda *_: refresh_online_badge())
+        self.header = HeroHeader()
+        self.header.settings_requested.connect(self.open_settings)
+        root_layout.addWidget(self.header)
 
-    sections_frame = ttk.Frame(scrollable_frame, style='MainTech.TFrame')
-    sections_frame.pack(pady=(0, 20), fill='both', expand=True)
+        self.tabs = QtWidgets.QTabWidget()
+        self.tabs.setTabPosition(QtWidgets.QTabWidget.TabPosition.North)
+        root_layout.addWidget(self.tabs, 1)
 
-    notebook = ttk.Notebook(sections_frame, style='MainTech.TNotebook')
-    notebook.pack(fill='both', expand=True, padx=20, pady=10)
+        self._build_tabs()
 
-    def build_tab_frame() -> tuple[ttk.Frame, ttk.Frame]:
-        tab = ttk.Frame(notebook, style='MainTech.TFrame')
-        inner = ttk.Frame(tab, style='MainTech.TFrame')
-        inner.pack(fill='both', expand=True, padx=25, pady=25)
-        return tab, inner
+        self.activity_panel = ActivityPanel()
+        self.tabs.addTab(self.activity_panel, "Operations Center")
 
-    user_tab, user_inner = build_tab_frame()
-    sap_tab, sap_inner = build_tab_frame()
-    agile_tab, agile_inner = build_tab_frame()
-    telco_tab, telco_inner = build_tab_frame()
-    activity_tab, activity_inner = build_tab_frame()
+        status_bar = QtWidgets.QStatusBar()
+        status_bar.setStyleSheet(
+            f"background-color: rgba(15, 23, 42, 0.92); color: {TEXT_MUTED}; font-size: 11px;"
+        )
+        self.setStatusBar(status_bar)
 
-    notebook.add(user_tab, text='User Ops')
-    notebook.add(sap_tab, text='SAP')
-    notebook.add(agile_tab, text='Agile')
-    notebook.add(telco_tab, text='Telecom')
-    notebook.add(activity_tab, text='Operations Center')
+        self.environment_label = QtWidgets.QLabel()
+        self.environment_label.setStyleSheet(f"color: {SUCCESS}; font-weight: 600;")
+        self.status_message = QtWidgets.QLabel("Ready")
+        self.status_message.setStyleSheet(f"color: {TEXT_PRIMARY};")
+        hint_label = QtWidgets.QLabel("Press Esc to exit • Use ⚙ Settings to manage configuration")
+        hint_label.setStyleSheet(f"color: {TEXT_MUTED};")
+        status_bar.addPermanentWidget(hint_label)
+        status_bar.addWidget(self.environment_label)
+        status_bar.addWidget(self.status_message, 1)
 
-    build_user_management_section(user_inner)
-    build_sap_section(sap_inner)
-    build_agile_section(agile_inner)
-    build_telco_section(telco_inner)
+        self._update_environment()
+        self._refresh_badge()
+        self._badge_timer = QtCore.QTimer(self)
+        self._badge_timer.timeout.connect(self._refresh_badge)
+        self._badge_timer.start(60000)
 
-    class ActivityLogPanel:
-        def __init__(self, parent: ttk.Frame) -> None:
-            self.container = ttk.Frame(parent, style='MainTech.TFrame')
-            self.container.pack(fill='both', expand=True)
+        register_listener(self.on_log_event)
+        log_event("ui", "Operator console launched", details={"profile": get_active_profile_name()})
 
-            header_frame = ttk.Frame(self.container, style='MainTech.TFrame')
-            header_frame.pack(fill='x', pady=(0, 12))
-            tk.Label(header_frame, text='📜 Recent Activity Log', font=('Segoe UI', 14, 'bold'), bg=BASE_BG, fg=TEXT_PRIMARY).pack(side='left')
-            ttk.Button(header_frame, text='Refresh', style='InfoButton.TButton', command=self.refresh).pack(side='right')
+        QtWidgets.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Escape), self, activated=self.close)
 
-            body = tk.Frame(self.container, bg=PANEL_BG, highlightthickness=0)
-            body.pack(fill='both', expand=True)
-            self.text = tk.Text(body, bg=PANEL_BG, fg=TEXT_PRIMARY, insertbackground=ACCENT, font=('Consolas', 10), wrap='word', borderwidth=0, relief='flat', state='disabled')
-            self.text.pack(side='left', fill='both', expand=True)
-            scrollbar_inner = ttk.Scrollbar(body, orient='vertical', command=self.text.yview)
-            scrollbar_inner.pack(side='right', fill='y')
-            self.text.configure(yscrollcommand=scrollbar_inner.set)
-            self.refresh()
+    def _build_tabs(self) -> None:
+        def create_tab(builder: Callable[[QtWidgets.QWidget], None]) -> QtWidgets.QWidget:
+            tab = QtWidgets.QWidget()
+            layout = QtWidgets.QVBoxLayout(tab)
+            layout.setContentsMargins(20, 20, 20, 20)
+            layout.setSpacing(18)
+            inner = QtWidgets.QWidget()
+            inner_layout = QtWidgets.QVBoxLayout(inner)
+            inner_layout.setContentsMargins(0, 0, 0, 0)
+            builder(inner)
+            layout.addWidget(inner)
+            return tab
 
-        def refresh(self) -> None:
-            events = get_recent_events(limit=120)
-            lines = [describe_event(entry) for entry in events]
-            self.text.configure(state='normal')
-            self.text.delete('1.0', 'end')
-            for line in lines:
-                self.text.insert('end', line + '\n')
-            self.text.configure(state='disabled')
-            self.text.see('end')
+        self.tabs.addTab(create_tab(build_user_management_section), "User Ops")
+        self.tabs.addTab(create_tab(build_sap_section), "SAP")
+        self.tabs.addTab(create_tab(build_agile_section), "Agile")
+        self.tabs.addTab(create_tab(build_telco_section), "Telecom")
 
-        def append(self, entry: dict) -> None:
-            root.after(0, lambda: self._append_entry(entry))
+    def _update_environment(self) -> None:
+        profile = get_active_profile_name()
+        self.environment_label.setText(f"Environment: {profile}")
 
-        def _append_entry(self, entry: dict) -> None:
-            self.text.configure(state='normal')
-            self.text.insert('end', describe_event(entry) + '\n')
-            self.text.configure(state='disabled')
-            self.text.see('end')
+    def _refresh_badge(self) -> None:
+        self.header.update_badge(get_active_profile_name())
 
-    activity_panel = ActivityLogPanel(activity_inner)
+    def on_log_event(self, entry: dict) -> None:
+        self.status_message.setText(describe_event(entry))
+        self.activity_panel.append(entry)
 
-    def on_escape(event: tk.Event) -> None:
-        root.quit()
+    def open_settings(self) -> None:
+        show_settings_dialog(self)
+        self._update_environment()
+        self._refresh_badge()
 
-    root.bind('<Escape>', on_escape)
 
-    def open_settings() -> None:
-        show_settings_dialog(root)
-
-    settings_button = ttk.Button(header, text='⚙ Settings', style='InfoButton.TButton', command=open_settings)
-    settings_button.pack(pady=15)
-
-    def initialize_window() -> None:
-        root.update_idletasks()
-        main_canvas.configure(scrollregion=main_canvas.bbox('all'))
-        x_pos = (screen_width // 2) - (window_width // 2)
-        y_pos = (screen_height // 2) - (window_height // 2)
-        root.geometry(f'{window_width}x{window_height}+{x_pos}+{y_pos}')
-        update_scroll_region()
-
-    def on_window_resize(event: tk.Event) -> None:
-        if event.widget == root:
-            root.after(10, update_scroll_region)
-
-    root.bind('<Configure>', on_window_resize)
-
-    def on_log_entry(entry: dict) -> None:
-        status_message_var.set(describe_event(entry))
-        activity_panel.append(entry)
-
-    register_listener(on_log_entry)
-    log_event('ui', 'Operator console launched', details={'profile': active_profile_var.get()})
-
-    status_bar = tk.Frame(root, bg=PANEL_BG)
-    status_bar.pack(fill='x', side='bottom')
-    tk.Label(status_bar, textvariable=environment_display_var, font=('Segoe UI', 10, 'bold'), bg=PANEL_BG, fg=ACCENT).pack(side='left', padx=16, pady=8)
-    tk.Label(status_bar, textvariable=status_message_var, font=('Segoe UI', 9), bg=PANEL_BG, fg=TEXT_PRIMARY, anchor='w').pack(side='left', padx=12)
-    tk.Label(status_bar, text='Press ESC to exit • Use ⚙ Settings to manage configuration', font=('Segoe UI', 9), bg=PANEL_BG, fg=TEXT_MUTED).pack(side='right', padx=16)
-
-    root.after(100, initialize_window)
-    root.mainloop()
+def launch() -> None:
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+    apply_dark_tech_palette(app)
+    window = MainWindow()
+    window.show()
+    app.exec()
 
 
 if __name__ == "__main__":
-    create_main_gui()
+    launch()
