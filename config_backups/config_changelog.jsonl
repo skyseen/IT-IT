@@ -1,0 +1,3 @@
+{"timestamp": "20251008-092219", "action": "create_profile", "backup_file": "it_tool_config_20251008-092219.json", "active_profile": "default", "metadata": {"profile": "KEN"}}
+{"timestamp": "20251008-092219", "action": "switch_profile", "backup_file": "it_tool_config_20251008-092219.json", "active_profile": "KEN", "metadata": {"profile": "KEN"}}
+{"timestamp": "20251008-092305", "action": "delete_profile", "backup_file": "it_tool_config_20251008-092305.json", "active_profile": "default", "metadata": {"profile": "KEN"}}
