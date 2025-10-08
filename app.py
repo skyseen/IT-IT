@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime
-import sys
 from typing import Callable, Optional
 
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -22,12 +21,21 @@ from ui import (
 )
 
 ASCII_BANNER = """
-██╗████████╗    ██╗ ██████╗     ██╗████████╗
-██║╚══██╔══╝    ██║██╔════╝     ██║╚══██╔══╝
-██║   ██║       ██║██║  ███╗    ██║   ██║   
-██║   ██║  ██   ██║██║   ██║    ██║   ██║   
-██║   ██║  ╚█████╔╝╚██████╔╝    ██║   ██║   
-╚═╝   ╚═╝   ╚════╝  ╚═════╝     ╚═╝   ╚═╝   
+                ,----,   ,---,                 ,----, 
+              ,/   .`|,`--.' |               ,/   .`| 
+   ,---,    ,`   .'  :|   :  :    ,---,    ,`   .'  : 
+,`--.' |  ;    ;     /'   '  ; ,`--.' |  ;    ;     / 
+|   :  :.'___,/    ,' |   |  | |   :  :.'___,/    ,'  
+:   |  '|    :     |  '   :  ; :   |  '|    :     |   
+|   :  |;    |.';  ;  |   |  ' |   :  |;    |.';  ;   
+'   '  ;`----'  |  |  '   :  | '   '  ;`----'  |  |   
+|   |  |    '   :  ;  ;   |  ; |   |  |    '   :  ;   
+'   :  ;    |   |  '  `---'. | '   :  ;    |   |  '   
+|   |  '    '   :  |   `--..`; |   |  '    '   :  |   
+'   :  |    ;   |.'   .--,_    '   :  |    ;   |.'    
+;   |.'     '---'     |    |`. ;   |.'     '---'      
+'---'                 `-- -`, ;'---'                  
+                        '---`"                       
 """
 
 
@@ -210,45 +218,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self._update_environment()
         self._refresh_badge()
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
-        log_event("ui", "Operator console closed", details={"profile": get_active_profile_name()})
-        super().closeEvent(event)
 
-
-_WINDOW: Optional[MainWindow] = None
-
-
-def launch() -> int:
-    global _WINDOW
-
-    existing_app = QtWidgets.QApplication.instance()
-    owns_app = existing_app is None
-
-    if owns_app:
-        QtCore.QCoreApplication.setAttribute(
-            QtCore.Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True
-        )
-        QtCore.QCoreApplication.setAttribute(
-            QtCore.Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True
-        )
-        app = QtWidgets.QApplication(sys.argv)
-    else:
-        app = existing_app
-
+def launch() -> None:
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
     apply_dark_tech_palette(app)
-
-    _WINDOW = MainWindow()
-    _WINDOW.show()
-    _WINDOW.raise_()
-    _WINDOW.activateWindow()
-
-    if owns_app:
-        result = app.exec()
-        _WINDOW = None
-        return result
-
-    return 0
+    window = MainWindow()
+    window.show()
+    app.exec()
 
 
 if __name__ == "__main__":
-    raise SystemExit(launch())
+    launch()
