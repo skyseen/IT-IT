@@ -1431,7 +1431,9 @@ def launch_m1_process(parent: QtWidgets.QWidget | None = None) -> None:
         _active_parent(parent),
         "M1 Bill Amount",
         "Enter total amount with GST:",
-        min=0.0,
+        value=0.0,
+        minValue=0.0,
+        maxValue=999999.99,
         decimals=2,
     )
     if not ok:

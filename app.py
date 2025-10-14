@@ -21,6 +21,13 @@ from ui import (
     show_settings_dialog,
 )
 
+# Import Kanban UI
+try:
+    from kanban.ui_board import build_kanban_section
+    KANBAN_AVAILABLE = True
+except Exception:
+    KANBAN_AVAILABLE = False
+
 ASCII_BANNER = """
                 ,----,   ,---,                 ,----, 
               ,/   .`|,`--.' |               ,/   .`| 
@@ -268,6 +275,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tabs.addTab(create_tab(build_sap_section), "SAP")
         self.tabs.addTab(create_tab(build_agile_section), "Agile")
         self.tabs.addTab(create_tab(build_telco_section), "Telecom")
+        
+        # Add Kanban tab if available
+        if KANBAN_AVAILABLE:
+            self.tabs.addTab(create_tab(build_kanban_section), "📋 Kanban")
 
     def _update_environment(self) -> None:
         profile = get_active_profile_name()

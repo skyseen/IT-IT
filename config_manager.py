@@ -73,6 +73,29 @@ DEFAULT_CONFIG: Dict[str, Any] = {
             "cc": "kenyi.seen@ingrasys.com"
         }
     },
+    "kanban": {
+        "enabled": True,
+        "features": {
+            "auto_create_tasks": True,
+            "workflow_integration": {
+                "sap_creation": True,
+                "sap_disable": True,
+                "agile_creation": True,
+                "agile_reset": True,
+                "telco_singtel": True,
+                "telco_m1": True,
+                "user_onboarding": False,
+                "user_disable": False
+            }
+        },
+        "default_columns": [
+            {"name": "Backlog", "position": 0, "color": "#94A3B8"},
+            {"name": "To Do", "position": 1, "color": "#60A5FA"},
+            {"name": "In Progress", "position": 2, "color": "#FBBF24", "wip_limit": 10},
+            {"name": "Review", "position": 3, "color": "#A78BFA"},
+            {"name": "Done", "position": 4, "color": "#34D399"}
+        ]
+    },
     "profiles": {},
 }
 
@@ -343,4 +366,57 @@ def update_profile_settings(
         metadata["signature"] = True
 
     _save_raw_config(raw_cfg, action="update_profile", metadata=metadata)
+
+
+# ---------------------------------------------------------------------------
+# Kanban-specific configuration helpers
+# ---------------------------------------------------------------------------
+
+
+def get_kanban_config(profile_name: str | None = None) -> Dict[str, Any]:
+    """
+    Get Kanban configuration for the specified profile.
+
+    Args:
+        profile_name: Profile name (defaults to active profile)
+
+    Returns:
+        Dict containing Kanban configuration
+    """
+    cfg = get_effective_config(profile_name)
+    return cfg.get("kanban", {})
+
+
+def set_kanban_config(config: Dict[str, Any], profile_name: str | None = None) -> None:
+    """
+    Update Kanban configuration for the specified profile.
+
+    Args:
+        config: New Kanban configuration dictionary
+        profile_name: Profile name (defaults to active profile)
+    """
+    if not profile_name:
+        profile_name = get_active_profile_name()
+
+    raw_cfg = _load_raw_config()
+    profile_data = raw_cfg["profiles"].setdefault(profile_name, {})
+    profile_data["kanban"] = config
+
+    _save_raw_config(raw_cfg, action="update_kanban_config", metadata={"profile": profile_name})
+
+
+def is_workflow_integration_enabled(workflow_type: str, profile_name: str | None = None) -> bool:
+    """
+    Check if workflow integration is enabled for a specific workflow type.
+
+    Args:
+        workflow_type: Type of workflow (e.g., 'sap_creation', 'agile_reset')
+        profile_name: Profile name (defaults to active profile)
+
+    Returns:
+        bool: True if integration is enabled, False otherwise
+    """
+    kanban_cfg = get_kanban_config(profile_name)
+    workflow_integrations = kanban_cfg.get("features", {}).get("workflow_integration", {})
+    return workflow_integrations.get(workflow_type, False)
 

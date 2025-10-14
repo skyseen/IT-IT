@@ -15,3 +15,28 @@
 {"timestamp": "2025-10-08T13:45:16Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
 {"timestamp": "2025-10-08T13:57:15Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
 {"timestamp": "2025-10-08T14:00:57Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-08T14:07:23Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-08T14:37:40Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-09T04:36:13Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-09T04:59:10Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-09T12:30:35Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-09T13:45:19Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-09T14:17:23Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-09T14:56:14Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-10T02:18:45Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-10T16:19:26Z", "category": "kanban", "message": "Task #31 created", "level": "info", "details": {"activity_type": "task_created", "user_id": 1, "task_id": 31, "new_value": "Test Task - Backend Verification"}}
+{"timestamp": "2025-10-10T16:19:26Z", "category": "kanban", "message": "Task #31 updated: priority changed from 'high' to 'critical'", "level": "info", "details": {"activity_type": "task_updated", "user_id": 1, "task_id": 31, "field_name": "priority", "old_value": "high", "new_value": "critical"}}
+{"timestamp": "2025-10-10T16:19:26Z", "category": "kanban", "message": "Task #31 updated: description changed from 'This task was created by the test script to verify backend functionality.' to 'Updated description - testing update functionality'", "level": "info", "details": {"activity_type": "task_updated", "user_id": 1, "task_id": 31, "field_name": "description", "old_value": "This task was created by the test script to verify backend functionality.", "new_value": "Updated description - testing update functionality"}}
+{"timestamp": "2025-10-10T16:19:27Z", "category": "kanban", "message": "Task #32 created", "level": "info", "details": {"activity_type": "task_created", "user_id": 1, "task_id": 32, "new_value": "Task Movement Test"}}
+{"timestamp": "2025-10-10T16:19:27Z", "category": "kanban", "message": "Task #32 moved from column 1 to 3", "level": "info", "details": {"activity_type": "task_moved", "user_id": 1, "task_id": 32, "field_name": "column_id", "old_value": "1", "new_value": "3"}}
+{"timestamp": "2025-10-10T16:19:27Z", "category": "kanban", "message": "Comment added to Task #8", "level": "info", "details": {"activity_type": "comment_added", "user_id": 1, "task_id": 8, "comment": "This is a test comment from the backend test script."}}
+{"timestamp": "2025-10-10T16:19:27Z", "category": "kanban", "message": "Comment added to Task #8", "level": "info", "details": {"activity_type": "comment_added", "user_id": 1, "task_id": 8, "comment": "Another comment to verify threading and multiple comments support."}}
+{"timestamp": "2025-10-10T16:19:55Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-10T16:30:24Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-13T07:54:37Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-13T08:38:15Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-13T08:45:12Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-13T08:45:26Z", "category": "telco.m1", "message": "M1 process cancelled - amount not provided", "level": "warning", "details": {}}
+{"timestamp": "2025-10-13T13:22:24Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-13T13:28:23Z", "category": "ui", "message": "Operator console launched", "level": "info", "details": {"profile": "default"}}
+{"timestamp": "2025-10-14T13:26:56Z", "category": "kanban", "message": "Comment added to Task #8", "level": "info", "details": {"activity_type": "comment_added", "user_id": 1, "task_id": 8, "comment": "hai"}}
