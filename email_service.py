@@ -95,16 +95,35 @@ def send_sap_support_email(emp_id: str, ticket_no: str, ticket_image_path: str, 
     mail.To = settings.get("to", "")
     mail.CC = settings.get("cc", "")
 
-    if support_type == "reset_password":
-        mail.Subject = f"SAP 814 Accounts Password Reset - {emp_id}"
-    else:
-        mail.Subject = f"SAP 814 Account Support - {emp_id}"
+    # Map support types to subject and body text
+    support_messages = {
+        "password_reset": {
+            "subject": f"SAP 814 Accounts Password Reset - {emp_id}",
+            "message": f"Kindly approve the SAP Ticket # {ticket_no} for <strong>password reset</strong>."
+        },
+        "unlock_account": {
+            "subject": f"SAP 814 Account Unlock Request - {emp_id}",
+            "message": f"Kindly approve the SAP Ticket # {ticket_no} to <strong>unlock the account</strong>."
+        },
+        "role_adjustment": {
+            "subject": f"SAP 814 Account Role Adjustment - {emp_id}",
+            "message": f"Kindly approve the SAP Ticket # {ticket_no} for <strong>role adjustment</strong>."
+        },
+        "other_support": {
+            "subject": f"SAP 814 Account Support Request - {emp_id}",
+            "message": f"Kindly approve the SAP Ticket # {ticket_no} for account support."
+        }
+    }
+    
+    # Get the appropriate message or use default
+    support_info = support_messages.get(support_type, support_messages["password_reset"])
+    mail.Subject = support_info["subject"]
 
     html_body = [
         "<html>",
         "<body style=\"font-family: Consolas, 'Segoe UI', sans-serif; color: #0d1117;\">",
         "    <p>Hi Boss,</p>",
-        f"    <p>Kindly approve the SAP Ticket # {ticket_no}</p>"
+        f"    <p>{support_info['message']}</p>"
     ]
 
     if ticket_image_path and os.path.exists(ticket_image_path):

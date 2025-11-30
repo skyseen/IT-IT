@@ -1,0 +1,154 @@
+{
+  "paths": {
+    "consolidated_excel": "//10.48.1.35/mis/IT Doc/SSO Master/SG17 Ingrasys/IT!IT TEST/\u8cec\u865f\u7533\u8acb\u6a21\u677f_F6S1_SAP 814 account creation_consolidated.xlsx",
+    "new_user_save_folder": "C:/Users/Kenyi.Seen/Desktop/IT/IT incoming & outgoing/NEW HC",
+    "sap_ticket_image_dir": "C:/Users/Kenyi.Seen/Pictures/Screenshots",
+    "agile_ticket_image_dir": "",
+    "singtel_igs32_path": "S:/Telco/Singtel",
+    "singtel_cnt35_path": "Y:/Telco/2025/Oct 2025",
+    "m1_igs32_path": "C:/Users/Kenyi.Seen/Desktop/test1",
+    "m1_cnt35_path": "C:/Users/Kenyi.Seen/Desktop/test",
+    "m1_igs32_excel": "C:/Users/Kenyi.Seen/Desktop/test1/IGS-Summarize-M1-Bill.xlsx",
+    "m1_cnt35_excel": "C:/Users/Kenyi.Seen/Desktop/test/IGS-Summarize-M1-Bill.xlsx"
+  },
+  "email_settings": {
+    "signature": "Best Regards,\nSeen Ken Yi\nIT Support Engineer(PM Shift)\nIngrasys(Singapore) Pte. Ltd\nExt: 63305563\nEmail: kenyi.seen@Ingrasys.com",
+    "new_user": {
+      "to": "kenyi.seen@ingrasys.com",
+      "cc": "kenyi.seen@ingrasys.com"
+    },
+    "disable_user": {
+      "to": "kenyi.seen@ingrasys.com",
+      "cc": "kenyi.seen@ingrasys.com"
+    },
+    "sap_support": {
+      "to": "kenyi.seen@ingrasys.com",
+      "cc": "kenyi.seen@ingrasys.com"
+    },
+    "sap_creation": {
+      "to": "windy.y.zhang@fii-foxconn.com\uff1b lingyun.niu@foxconn.com.sg",
+      "cc": "alex.ng@ingrasys.com; chinlun.wong@ingrasys.com; oscar.loo@ingrasys.com;chinyong.lim@ingrasys.com;"
+    },
+    "agile_creation": {
+      "to": "kenyi.seen@ingrasys.com",
+      "cc": "kenyi.seen@ingrasys.com"
+    },
+    "agile_reset": {
+      "to": "kenyi.seen@ingrasys.com",
+      "cc": "kenyi.seen@ingrasys.com"
+    },
+    "singtel_telco": {
+      "to": "SheawReei.Tey@ingrasys.com; jiawen.chee@foxconn.com.sg",
+      "cc": "alex.ng@ingrasys.com; chinlun.wong@ingrasys.com; oscar.loo@ingrasys.com; chinyong.lim@ingrasys.com; lingyun.niu@foxconn.com.sg; Xianghui.ong@foxconn.com.sg; Alice.ang@foxconn.com.sg; ranice.thong@foxconn.com.sg"
+    },
+    "m1_telco": {
+      "to": "kenyi.seen@ingrasys.com",
+      "cc": "kenyi.seen@ingrasys.com"
+    },
+    "sap_disable": {
+      "to": "windy.y.zhang@fii-foxconn.com",
+      "cc": "alex.ng@ingrasys.com; chinlun.wong@ingrasys.com; oscar.loo@ingrasys.com;chinyong.lim@ingrasys.com;lingyun.niu@foxconn.com.sg;SheawReei.Tey@ingrasys.com"
+    }
+  },
+  "active_profile": "KEN",
+  "profiles": {
+    "KEN": {
+      "paths": {
+        "consolidated_excel": "//10.48.1.35/mis/IT Doc/SSO Master/SG17 Ingrasys/IT!IT TEST/\u8cec\u865f\u7533\u8acb\u6a21\u677f_F6S1_SAP 814 account creation_consolidated.xlsx",
+        "new_user_save_folder": "C:/Users/Kenyi.Seen/Desktop/IT/IT incoming & outgoing/NEW HC",
+        "sap_ticket_image_dir": "C:/Users/Kenyi.Seen/Pictures/Screenshots",
+        "agile_ticket_image_dir": "",
+        "singtel_igs32_path": "S:/Telco/Singtel",
+        "singtel_cnt35_path": "Y:/Telco/2025/Oct 2025",
+        "m1_igs32_path": "C:/Users/Kenyi.Seen/Desktop/test1",
+        "m1_cnt35_path": "C:/Users/Kenyi.Seen/Desktop/test",
+        "m1_igs32_excel": "C:/Users/Kenyi.Seen/Desktop/test1/IGS-Summarize-M1-Bill.xlsx",
+        "m1_cnt35_excel": "C:/Users/Kenyi.Seen/Desktop/test/IGS-Summarize-M1-Bill.xlsx"
+      },
+      "email_settings": {
+        "signature": "Best Regards,\nSeen Ken Yi\nIT Support Engineer(PM Shift)\nIngrasys(Singapore) Pte. Ltd\nExt: 63305563\nEmail: kenyi.seen@Ingrasys.com",
+        "new_user": {
+          "to": "kenyi.seen@ingrasys.com",
+          "cc": "kenyi.seen@ingrasys.com"
+        },
+        "disable_user": {
+          "to": "kenyi.seen@ingrasys.com",
+          "cc": "kenyi.seen@ingrasys.com"
+        },
+        "sap_support": {
+          "to": "kenyi.seen@ingrasys.com",
+          "cc": "kenyi.seen@ingrasys.com"
+        },
+        "sap_creation": {
+          "to": "windy.y.zhang@fii-foxconn.com\uff1b lingyun.niu@foxconn.com.sg",
+          "cc": "alex.ng@ingrasys.com; chinlun.wong@ingrasys.com; oscar.loo@ingrasys.com;chinyong.lim@ingrasys.com;"
+        },
+        "agile_creation": {
+          "to": "kenyi.seen@ingrasys.com",
+          "cc": "kenyi.seen@ingrasys.com"
+        },
+        "agile_reset": {
+          "to": "kenyi.seen@ingrasys.com",
+          "cc": "kenyi.seen@ingrasys.com"
+        },
+        "singtel_telco": {
+          "to": "SheawReei.Tey@ingrasys.com; jiawen.chee@foxconn.com.sg",
+          "cc": "alex.ng@ingrasys.com; chinlun.wong@ingrasys.com; oscar.loo@ingrasys.com; chinyong.lim@ingrasys.com; lingyun.niu@foxconn.com.sg; Xianghui.ong@foxconn.com.sg; Alice.ang@foxconn.com.sg; ranice.thong@foxconn.com.sg"
+        },
+        "m1_telco": {
+          "to": "kenyi.seen@ingrasys.com",
+          "cc": "kenyi.seen@ingrasys.com"
+        },
+        "sap_disable": {
+          "to": "windy.y.zhang@fii-foxconn.com",
+          "cc": "alex.ng@ingrasys.com; chinlun.wong@ingrasys.com; oscar.loo@ingrasys.com;chinyong.lim@ingrasys.com;lingyun.niu@foxconn.com.sg;SheawReei.Tey@ingrasys.com"
+        }
+      }
+    }
+  },
+  "kanban": {
+    "enabled": true,
+    "features": {
+      "auto_create_tasks": true,
+      "workflow_integration": {
+        "sap_creation": true,
+        "sap_disable": true,
+        "agile_creation": true,
+        "agile_reset": true,
+        "telco_singtel": true,
+        "telco_m1": true,
+        "user_onboarding": false,
+        "user_disable": false
+      }
+    },
+    "remembered_session_token": "6W-tm7FBUsTXXbIDcEqRs26z_V81lI_2hSpIeyhGWjNXtkLkZFK9WzCa6uTu0GJ-",
+    "default_columns": [
+      {
+        "name": "Backlog",
+        "position": 0,
+        "color": "#94A3B8"
+      },
+      {
+        "name": "To Do",
+        "position": 1,
+        "color": "#60A5FA"
+      },
+      {
+        "name": "In Progress",
+        "position": 2,
+        "color": "#FBBF24",
+        "wip_limit": 20
+      },
+      {
+        "name": "Review",
+        "position": 3,
+        "color": "#A78BFA"
+      },
+      {
+        "name": "Done",
+        "position": 4,
+        "color": "#34D399"
+      }
+    ]
+  }
+}

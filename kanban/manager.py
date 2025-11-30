@@ -710,20 +710,47 @@ class KanbanManager:
         return f"TASK-{next_num:04d}"
 
     def get_task_statistics(self) -> Dict[str, Any]:
-        """Get overall task statistics."""
+        """Get overall task statistics based on column positions (not status field)."""
         session = self.db.get_session()
         try:
+            # Get column IDs for workflow states
+            done_column = session.query(KanbanColumn).filter_by(name="Done", is_active=True).first()
+            in_progress_column = session.query(KanbanColumn).filter_by(name="In Progress", is_active=True).first()
+            
+            # Count tasks by column position (actual workflow state)
             total_tasks = session.query(KanbanTask).filter_by(is_deleted=False).count()
-            completed_tasks = session.query(KanbanTask).filter_by(status="completed", is_deleted=False).count()
-            overdue_tasks = (
+            
+            completed_tasks = 0
+            if done_column:
+                completed_tasks = session.query(KanbanTask).filter_by(
+                    column_id=done_column.id, 
+                    is_deleted=False
+                ).count()
+            
+            in_progress_tasks = 0
+            if in_progress_column:
+                in_progress_tasks = session.query(KanbanTask).filter_by(
+                    column_id=in_progress_column.id,
+                    is_deleted=False
+                ).count()
+            
+            # Calculate active tasks (not in Done column)
+            active_tasks = total_tasks - completed_tasks
+            
+            # Use is_overdue property (already excludes Done column and archived)
+            all_tasks = (
                 session.query(KanbanTask)
-                .filter(KanbanTask.deadline < datetime.now().date(), KanbanTask.is_deleted == False)
-                .count()
+                .options(joinedload(KanbanTask.column))
+                .filter_by(is_deleted=False)
+                .all()
             )
+            overdue_tasks = sum(1 for task in all_tasks if task.is_overdue)
 
             return {
                 "total_tasks": total_tasks,
                 "completed_tasks": completed_tasks,
+                "in_progress_tasks": in_progress_tasks,
+                "active_tasks": active_tasks,
                 "completion_rate": (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0,
                 "overdue_tasks": overdue_tasks,
             }

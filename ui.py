@@ -505,16 +505,76 @@ def launch_sap_flow(parent: QtWidgets.QWidget | None = None) -> None:
         log_event("sap.creation", "SAP creation flow cancelled - no Excel selected", level="warning")
         return
 
+    # Create progress dialog to show loading status
+    progress = QtWidgets.QProgressDialog("Reading Excel file...", None, 0, 0, parent)
+    progress.setWindowTitle("Loading")
+    progress.setWindowModality(QtCore.Qt.WindowModality.WindowModal)
+    progress.setMinimumDuration(0)
+    progress.setValue(0)
+    QtWidgets.QApplication.processEvents()
+
     try:
+        # Check if file exists and is accessible
+        if not os.path.exists(user_excel_path):
+            progress.close()
+            show_error(f"File not found:\n{user_excel_path}", parent=parent)
+            return
+        
+        # Check if file is locked (opened in Excel)
+        try:
+            with open(user_excel_path, 'r+b'):
+                pass
+        except PermissionError:
+            progress.close()
+            show_error(
+                f"File is currently open in Excel or locked by another process.\n\n"
+                f"Please close the file and try again.\n\n"
+                f"File: {user_excel_path}",
+                parent=parent
+            )
+            log_event(
+                "sap.creation",
+                "Excel file is locked",
+                level="warning",
+                details={"file": user_excel_path},
+            )
+            return
+        
+        progress.setLabelText("Reading Excel data...")
+        QtWidgets.QApplication.processEvents()
+        
         user_df = pd.read_excel(user_excel_path, engine="openpyxl")
+        
+        progress.close()
+    except PermissionError as exc:
+        progress.close()
+        log_event(
+            "sap.creation",
+            "Permission denied reading SAP Excel",
+            level="error",
+            details={"error": str(exc), "file": user_excel_path},
+        )
+        show_error(
+            f"Permission denied. The file may be open in Excel.\n\n"
+            f"Please close the file and try again.\n\n"
+            f"File: {user_excel_path}",
+            parent=parent
+        )
+        return
     except Exception as exc:  # noqa: BLE001
+        progress.close()
         log_event(
             "sap.creation",
             "Unable to read user submitted SAP Excel",
             level="error",
             details={"error": str(exc), "file": user_excel_path},
         )
-        show_error(f"Failed to read the user submitted Excel.\n\nDetails: {exc}", parent=parent)
+        show_error(
+            f"Failed to read the user submitted Excel.\n\n"
+            f"The file may be corrupted or in an unsupported format.\n\n"
+            f"Error details: {exc}",
+            parent=parent
+        )
         return
 
     cons_path = get_path("consolidated_excel")
@@ -539,17 +599,60 @@ def launch_sap_flow(parent: QtWidgets.QWidget | None = None) -> None:
         details={"user_excel": os.path.basename(user_excel_path)},
     )
 
+    # Create progress dialog for parsing
+    progress = QtWidgets.QProgressDialog("Processing SAP data...", None, 0, 0, parent)
+    progress.setWindowTitle("Processing")
+    progress.setWindowModality(QtCore.Qt.WindowModality.WindowModal)
+    progress.setMinimumDuration(0)
+    progress.setValue(0)
+    QtWidgets.QApplication.processEvents()
+
     try:
+        progress.setLabelText("Reading consolidated Excel...")
+        QtWidgets.QApplication.processEvents()
+        
+        # Check if consolidated file is accessible
+        if not os.path.exists(cons_path):
+            progress.close()
+            show_error(f"Consolidated Excel file not found:\n{cons_path}", parent=parent)
+            return
+        
         existing_emp = get_all_existing_employees(cons_path)
+        
+        progress.setLabelText("Parsing user data...")
+        QtWidgets.QApplication.processEvents()
+        
         parsed = parse_user_excel(user_df, existing_emp)
+        
+        progress.close()
+    except PermissionError as exc:
+        progress.close()
+        log_event(
+            "sap.creation",
+            "Consolidated Excel file is locked",
+            level="error",
+            details={"error": str(exc), "file": cons_path},
+        )
+        show_error(
+            f"Cannot access consolidated Excel file.\n\n"
+            f"The file may be open in Excel. Please close it and try again.\n\n"
+            f"File: {cons_path}",
+            parent=parent
+        )
+        return
     except Exception as exc:  # noqa: BLE001
+        progress.close()
         log_event(
             "sap.creation",
             "Failed to parse SAP onboarding workbook",
             level="error",
             details={"error": str(exc)},
         )
-        show_error(f"Unable to parse SAP onboarding Excel.\n\nDetails: {exc}", parent=parent)
+        show_error(
+            f"Unable to parse SAP onboarding Excel.\n\n"
+            f"Error details: {exc}",
+            parent=parent
+        )
         return
 
     if not parsed.rows_to_append and not parsed.already_created:
@@ -566,6 +669,10 @@ def launch_sap_flow(parent: QtWidgets.QWidget | None = None) -> None:
         "Launching SAP onboarding preview",
         details={"pending_rows": len(parsed.rows_to_append)},
     )
+    
+    # Ensure all Qt events are processed before showing Tkinter window
+    QtWidgets.QApplication.processEvents()
+    
     build_preview_window(
         parsed.rows_to_append,
         parsed.already_created,

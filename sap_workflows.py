@@ -414,7 +414,11 @@ def build_preview_window(
     user_excel_path: str,
     other_desc_map: Dict[str, str],
 ) -> None:
-    preview = tk.Toplevel()
+    # Create a hidden root window (required for Toplevel to work properly)
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+    
+    preview = tk.Toplevel(root)
     preview.title("SAP_PREVIEW_MODULE")
     
     # Calculate responsive size based on screen dimensions
@@ -733,13 +737,37 @@ def build_preview_window(
         }
         send_sap_creation_email(email_attach_paths)
         preview.destroy()
+        root.quit()  # Exit the mainloop after successful completion
 
+    # Close button handler to properly clean up
+    def on_closing():
+        preview.destroy()
+        root.quit()
+    
+    preview.protocol("WM_DELETE_WINDOW", on_closing)
+    
     ttk.Button(main_frame, text="[EXECUTE] PROCESS_BATCH", command=confirm).pack(fill="x", pady=10)
 
     # Window is already centered and sized, just finalize
     preview.update_idletasks()
-    preview.transient()
+    
+    # Make sure window is visible and on top
+    preview.deiconify()
+    preview.lift()
+    preview.focus_force()
     preview.grab_set()
+    
+    # Make sure root window processes events
+    root.update()
+    
+    # Start the event loop - this will block until window is closed
+    root.mainloop()
+    
+    # Clean up after mainloop exits
+    try:
+        root.destroy()
+    except:
+        pass  # Window may already be destroyed
 
 
 @dataclass
