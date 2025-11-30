@@ -9,6 +9,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from kanban.auth import authenticate, AuthenticationError, change_password
 from kanban.database import get_db_manager
 from kanban.manager import KanbanManager
 
@@ -258,18 +259,17 @@ def main():
     # Get database and create manager
     db = get_db_manager()
 
-    # Get first user for testing
-    session = db.get_session()
-    from kanban.models import KanbanUser
-
-    user = session.query(KanbanUser).filter_by(is_active=True).first()
-    session.close()
-
-    if not user:
-        print("❌ No users found! Please run seed_kanban_data.py first.")
+    try:
+        auth_result = authenticate("kenyi.seen", "ChangeMe123!", remember_me=False)
+    except AuthenticationError as exc:
+        print(f"❌ Failed to authenticate default user: {exc}")
         sys.exit(1)
 
-    manager = KanbanManager(db, current_user_id=user.id)
+    manager = KanbanManager(
+        db,
+        current_user_id=auth_result.user.id,
+        session_token=auth_result.session.session_token,
+    )
 
     # Run all tests
     tests = [

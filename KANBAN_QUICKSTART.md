@@ -142,3 +142,14 @@ Update password in `config/kanban_config.json`
 **Need Help?** Check `docs/KANBAN_SETUP.md` for detailed troubleshooting.
 
 
+
+
+
+
+
+
+
+
+
+
+

@@ -54,6 +54,8 @@ class AuditLogger:
         """
         from kanban.models import KanbanActivityLog
 
+        print(f"[AuditLog] log_activity called: type={activity_type}, field={field_name}, old={old_value}, new={new_value}")
+
         # Log to PostgreSQL (detailed)
         session = self.db_manager.get_session()
         try:
@@ -71,6 +73,7 @@ class AuditLogger:
             )
             session.add(activity_log)
             session.commit()
+            print(f"[AuditLog] Activity logged to DB: id={activity_log.id}")
         except Exception as e:
             session.rollback()
             # Log error but don't fail the operation
@@ -221,13 +224,28 @@ class AuditLogger:
 
     def log_task_moved(self, task, user_id: int, old_column_id: int, new_column_id: int) -> None:
         """Log task move between columns."""
+        from kanban.models import KanbanColumn
+        
+        # Get column names instead of IDs for better readability
+        session = self.db_manager.get_session()
+        try:
+            old_column = session.query(KanbanColumn).filter_by(id=old_column_id).first()
+            new_column = session.query(KanbanColumn).filter_by(id=new_column_id).first()
+            
+            old_column_name = old_column.name if old_column else f"Column #{old_column_id}"
+            new_column_name = new_column.name if new_column else f"Column #{new_column_id}"
+            
+            print(f"[AuditLog] Logging move: FROM '{old_column_name}' TO '{new_column_name}'")
+        finally:
+            session.close()
+        
         self.log_activity(
             activity_type="task_moved",
             user_id=user_id,
             task_id=task.id,
-            field_name="column_id",
-            old_value=str(old_column_id),
-            new_value=str(new_column_id),
+            field_name="column",
+            old_value=old_column_name,
+            new_value=new_column_name,
         )
 
     def log_comment_added(self, comment, user_id: int) -> None:

@@ -17,6 +17,9 @@ from kanban.models import (
     KanbanAttachment,
     KanbanColumn,
     KanbanComment,
+    KanbanGroup,
+    KanbanGroupMember,
+    KanbanSession,
     KanbanTask,
     KanbanUser,
 )
@@ -28,7 +31,14 @@ class KanbanManager:
     All CRUD operations go through this class.
     """
 
-    def __init__(self, db_manager: DatabaseManager, current_user_id: int, ip_address: Optional[str] = None):
+    def __init__(
+        self,
+        db_manager: DatabaseManager,
+        current_user_id: int,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+        session_token: Optional[str] = None,
+    ):
         """
         Initialize Kanban manager.
 
@@ -40,6 +50,8 @@ class KanbanManager:
         self.db = db_manager
         self.current_user_id = current_user_id
         self.ip_address = ip_address
+        self.user_agent = user_agent
+        self.session_token = session_token
         self.logger = AuditLogger(db_manager)
 
     # -----------------------------------------------------------------------
@@ -52,6 +64,7 @@ class KanbanManager:
         column_id: int,
         description: Optional[str] = None,
         assigned_to: Optional[int] = None,
+        assigned_group_id: Optional[int] = None,
         priority: str = "medium",
         category: Optional[str] = None,
         deadline: Optional[date] = None,
@@ -71,6 +84,7 @@ class KanbanManager:
             column_id: ID of the column to create task in
             description: Optional task description
             assigned_to: Optional user ID to assign task to
+            assigned_group_id: Optional group ID to assign task to
             priority: Task priority (low, medium, high, critical)
             category: Task category (sap, agile, telco, user_ops, general, etc.)
             deadline: Optional deadline date
@@ -109,6 +123,7 @@ class KanbanManager:
                 column_id=column_id,
                 position=float(max_position) + 1.0,
                 assigned_to=assigned_to,
+                assigned_group_id=assigned_group_id,
                 created_by=self.current_user_id,
                 priority=priority,
                 category=category,
@@ -152,6 +167,7 @@ class KanbanManager:
                 session.query(KanbanTask)
                 .options(
                     joinedload(KanbanTask.assignee),
+                    joinedload(KanbanTask.assigned_group),
                     joinedload(KanbanTask.creator),
                     joinedload(KanbanTask.column),
                 )
@@ -182,6 +198,7 @@ class KanbanManager:
                 session.query(KanbanTask)
                 .options(
                     joinedload(KanbanTask.assignee),
+                    joinedload(KanbanTask.assigned_group),
                     joinedload(KanbanTask.creator),
                     joinedload(KanbanTask.column),
                 )
@@ -205,7 +222,11 @@ class KanbanManager:
                 self.logger.log_task_updated(task, self.current_user_id, changes)
 
             session.commit()
-            session.refresh(task)
+            
+            # Make the task object persistent after commit
+            session.expire_all()
+            task = session.query(KanbanTask).get(task_id)
+            
             return task
 
         except Exception as e:
@@ -265,17 +286,21 @@ class KanbanManager:
         Raises:
             ValueError: If task or column not found
         """
+        print(f"[Manager] move_task called for task {task_id} -> column {new_column_id}")
         session = self.db.get_session()
         try:
             task = session.query(KanbanTask).filter_by(id=task_id, is_deleted=False).first()
             if not task:
+                print(f"[Manager] Task {task_id} not found")
                 raise ValueError(f"Task {task_id} not found")
 
             column = session.query(KanbanColumn).filter_by(id=new_column_id, is_active=True).first()
             if not column:
+                print(f"[Manager] Column {new_column_id} not found")
                 raise ValueError(f"Column {new_column_id} not found")
 
             old_column_id = task.column_id
+            print(f"[Manager] Task {task_id} old column {old_column_id}")
 
             # Update position
             if new_position is None:
@@ -290,24 +315,46 @@ class KanbanManager:
             task.column_id = new_column_id
             task.position = new_position
 
-            # Track time (if moving to "In Progress" or "Done")
+            # Get old column for comparison
+            old_column = session.query(KanbanColumn).filter_by(id=old_column_id).first()
+
+            # Smart status management based on column
+            if column.name == "Done":
+                # Moving to Done column - mark as completed
+                if not task.completed_at:
+                    task.completed_at = datetime.now()
+                if task.status != "archived":  # Don't override archived status
+                    task.status = "completed"
+            elif old_column and old_column.name == "Done":
+                # Moving FROM Done to another column - reopen task
+                task.completed_at = None
+                if task.status == "completed":
+                    task.status = "active"  # Reactivate task
+            
+            # Track when task starts (moving to In Progress)
             if column.name == "In Progress" and not task.started_at:
                 task.started_at = datetime.now()
-            elif column.name == "Done" and not task.completed_at:
-                task.completed_at = datetime.now()
-                task.status = "completed"
+                if task.status not in ["blocked", "archived"]:
+                    task.status = "active"
 
-            # Log move
-            self.logger.log_task_moved(task, self.current_user_id, old_column_id, new_column_id)
-
+            # Commit the changes
             session.commit()
-            return task
+            print(f"[Manager] Task {task_id} move committed successfully to column {new_column_id}")
+            
+            # Log move before closing session (while task is still attached)
+            self.logger.log_task_moved(task, self.current_user_id, old_column_id, new_column_id)
+            
+            session.close()
+            
+            print(f"[Manager] Task {task_id} move complete")
+            # Return None since the task object is now detached - UI will refresh to get fresh data
+            return None
 
         except Exception as e:
             session.rollback()
-            raise e
-        finally:
             session.close()
+            print(f"[Manager] move_task error: {e}")
+            raise e
 
     def get_tasks_by_column(self, column_id: int) -> List[KanbanTask]:
         """
@@ -325,6 +372,7 @@ class KanbanManager:
                 session.query(KanbanTask)
                 .options(
                     joinedload(KanbanTask.assignee),
+                    joinedload(KanbanTask.assigned_group),
                     joinedload(KanbanTask.creator),
                     joinedload(KanbanTask.column),
                 )
@@ -332,6 +380,17 @@ class KanbanManager:
                 .order_by(KanbanTask.position)
                 .all()
             )
+            
+            # Eagerly load member counts for assigned groups
+            for task in tasks:
+                if task.assigned_group:
+                    member_count = (
+                        session.query(func.count(KanbanGroupMember.id))
+                        .filter(KanbanGroupMember.group_id == task.assigned_group.id)
+                        .scalar()
+                    )
+                    task.assigned_group._member_count = member_count or 0
+            
             return tasks
         finally:
             session.close()
@@ -668,6 +727,280 @@ class KanbanManager:
                 "completion_rate": (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0,
                 "overdue_tasks": overdue_tasks,
             }
+        finally:
+            session.close()
+
+    def get_all_tasks(self) -> List[KanbanTask]:
+        """Get all non-deleted tasks."""
+        session = self.db.get_session()
+        try:
+            tasks = (
+                session.query(KanbanTask)
+                .options(
+                    joinedload(KanbanTask.assignee),
+                    joinedload(KanbanTask.assigned_group),
+                    joinedload(KanbanTask.creator),
+                    joinedload(KanbanTask.column),
+                )
+                .filter_by(is_deleted=False)
+                .order_by(KanbanTask.created_at.desc())
+                .all()
+            )
+            return tasks
+        finally:
+            session.close()
+
+    # Aliases for convenience
+    def get_tasks_by_assignee(self, user_id: int) -> List[KanbanTask]:
+        """Alias for get_tasks_by_user."""
+        return self.get_tasks_by_user(user_id)
+
+    def get_statistics(self) -> Dict[str, Any]:
+        """Alias for get_task_statistics."""
+        return self.get_task_statistics()
+
+    # -----------------------------------------------------------------------
+    # Group Operations
+    # -----------------------------------------------------------------------
+
+    def create_group(self, name: str, description: Optional[str] = None, color: str = "#60A5FA") -> KanbanGroup:
+        """
+        Create a new group.
+
+        Args:
+            name: Group name
+            description: Optional group description
+            color: Display color for UI
+
+        Returns:
+            Created group object
+
+        Raises:
+            ValueError: If group name already exists
+        """
+        session = self.db.get_session()
+        try:
+            # Check if group name already exists
+            existing = session.query(KanbanGroup).filter_by(name=name, is_active=True).first()
+            if existing:
+                raise ValueError(f"Group '{name}' already exists")
+
+            group = KanbanGroup(
+                name=name,
+                description=description,
+                color=color,
+                created_by=self.current_user_id,
+                modified_by=self.current_user_id,
+            )
+            session.add(group)
+            session.commit()
+            return group
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
+    def get_all_groups(self) -> List[KanbanGroup]:
+        """Get all active groups."""
+        session = self.db.get_session()
+        try:
+            groups = (
+                session.query(KanbanGroup)
+                .filter_by(is_active=True)
+                .order_by(KanbanGroup.name)
+                .all()
+            )
+            
+            # Eagerly load member counts before session closes
+            for group in groups:
+                member_count = (
+                    session.query(func.count(KanbanGroupMember.id))
+                    .filter(KanbanGroupMember.group_id == group.id)
+                    .scalar()
+                )
+                group._member_count = member_count or 0
+            
+            return groups
+        finally:
+            session.close()
+
+    def get_group(self, group_id: int) -> Optional[KanbanGroup]:
+        """Get a group by ID."""
+        session = self.db.get_session()
+        try:
+            group = session.query(KanbanGroup).filter_by(id=group_id, is_active=True).first()
+            return group
+        finally:
+            session.close()
+
+    def update_group(
+        self, group_id: int, name: Optional[str] = None, description: Optional[str] = None, color: Optional[str] = None
+    ) -> KanbanGroup:
+        """
+        Update a group.
+
+        Args:
+            group_id: Group ID
+            name: Optional new name
+            description: Optional new description
+            color: Optional new color
+
+        Returns:
+            Updated group object
+
+        Raises:
+            ValueError: If group not found or name already exists
+        """
+        session = self.db.get_session()
+        try:
+            group = session.query(KanbanGroup).filter_by(id=group_id, is_active=True).first()
+            if not group:
+                raise ValueError(f"Group {group_id} not found")
+
+            if name and name != group.name:
+                # Check if new name already exists
+                existing = session.query(KanbanGroup).filter_by(name=name, is_active=True).first()
+                if existing:
+                    raise ValueError(f"Group '{name}' already exists")
+                group.name = name
+
+            if description is not None:
+                group.description = description
+
+            if color:
+                group.color = color
+
+            group.modified_by = self.current_user_id
+            session.commit()
+            return group
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
+    def delete_group(self, group_id: int) -> None:
+        """
+        Soft delete a group.
+
+        Args:
+            group_id: Group ID
+
+        Raises:
+            ValueError: If group not found
+        """
+        session = self.db.get_session()
+        try:
+            group = session.query(KanbanGroup).filter_by(id=group_id, is_active=True).first()
+            if not group:
+                raise ValueError(f"Group {group_id} not found")
+
+            group.is_active = False
+            group.modified_by = self.current_user_id
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
+    def add_group_member(self, group_id: int, user_id: int, role: str = "member") -> KanbanGroupMember:
+        """
+        Add a user to a group.
+
+        Args:
+            group_id: Group ID
+            user_id: User ID
+            role: Member role (lead, member)
+
+        Returns:
+            Created group member object
+
+        Raises:
+            ValueError: If group or user not found, or user already in group
+        """
+        session = self.db.get_session()
+        try:
+            # Check group exists
+            group = session.query(KanbanGroup).filter_by(id=group_id, is_active=True).first()
+            if not group:
+                raise ValueError(f"Group {group_id} not found")
+
+            # Check user exists
+            user = session.query(KanbanUser).filter_by(id=user_id, is_active=True).first()
+            if not user:
+                raise ValueError(f"User {user_id} not found")
+
+            # Check if already a member
+            existing = (
+                session.query(KanbanGroupMember).filter_by(group_id=group_id, user_id=user_id).first()
+            )
+            if existing:
+                raise ValueError(f"User {user_id} is already a member of group {group_id}")
+
+            member = KanbanGroupMember(
+                group_id=group_id,
+                user_id=user_id,
+                role=role,
+                added_by=self.current_user_id,
+            )
+            session.add(member)
+            session.commit()
+            return member
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
+    def remove_group_member(self, group_id: int, user_id: int) -> None:
+        """
+        Remove a user from a group.
+
+        Args:
+            group_id: Group ID
+            user_id: User ID
+
+        Raises:
+            ValueError: If membership not found
+        """
+        session = self.db.get_session()
+        try:
+            member = (
+                session.query(KanbanGroupMember).filter_by(group_id=group_id, user_id=user_id).first()
+            )
+            if not member:
+                raise ValueError(f"User {user_id} is not a member of group {group_id}")
+
+            session.delete(member)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
+    def get_group_members(self, group_id: int) -> List[KanbanUser]:
+        """
+        Get all members of a group.
+
+        Args:
+            group_id: Group ID
+
+        Returns:
+            List of user objects
+        """
+        session = self.db.get_session()
+        try:
+            members = (
+                session.query(KanbanUser)
+                .join(KanbanGroupMember, KanbanGroupMember.user_id == KanbanUser.id)
+                .filter(KanbanGroupMember.group_id == group_id, KanbanUser.is_active == True)  # noqa: E712
+                .order_by(KanbanUser.display_name)
+                .all()
+            )
+            return members
         finally:
             session.close()
 

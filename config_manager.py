@@ -88,6 +88,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
                 "user_disable": False
             }
         },
+        "remembered_session_token": None,
         "default_columns": [
             {"name": "Backlog", "position": 0, "color": "#94A3B8"},
             {"name": "To Do", "position": 1, "color": "#60A5FA"},
@@ -399,8 +400,14 @@ def set_kanban_config(config: Dict[str, Any], profile_name: str | None = None) -
         profile_name = get_active_profile_name()
 
     raw_cfg = _load_raw_config()
-    profile_data = raw_cfg["profiles"].setdefault(profile_name, {})
-    profile_data["kanban"] = config
+    if profile_name == "default":
+        section = raw_cfg.setdefault("kanban", {})
+    else:
+        profile_data = raw_cfg.setdefault("profiles", {}).setdefault(profile_name, {})
+        section = profile_data.setdefault("kanban", {})
+
+    section.clear()
+    section.update(config)
 
     _save_raw_config(raw_cfg, action="update_kanban_config", metadata={"profile": profile_name})
 
@@ -419,4 +426,19 @@ def is_workflow_integration_enabled(workflow_type: str, profile_name: str | None
     kanban_cfg = get_kanban_config(profile_name)
     workflow_integrations = kanban_cfg.get("features", {}).get("workflow_integration", {})
     return workflow_integrations.get(workflow_type, False)
+
+
+def get_remembered_kanban_session_token(profile_name: str | None = None) -> str | None:
+    """Return the remembered Kanban session token for the given profile."""
+
+    kanban_cfg = get_kanban_config(profile_name)
+    return kanban_cfg.get("remembered_session_token")
+
+
+def set_remembered_kanban_session_token(token: str | None, profile_name: str | None = None) -> None:
+    """Persist the remembered Kanban session token for the given profile."""
+
+    kanban_cfg = dict(get_kanban_config(profile_name))
+    kanban_cfg["remembered_session_token"] = token
+    set_kanban_config(kanban_cfg, profile_name)
 

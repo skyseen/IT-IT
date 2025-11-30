@@ -322,3 +322,14 @@ A: Run any new migration SQL scripts provided, or manually add columns/tables.
 **Congratulations!** Your Kanban feature is now set up and ready to use! 🎉
 
 
+
+
+
+
+
+
+
+
+
+
+

@@ -1,3 +1,5 @@
+"""IT!IT Application with Sidebar Layout - Main Entry Point."""
+
 from __future__ import annotations
 
 import datetime
@@ -8,6 +10,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from activity_log import describe_event, get_recent_events, log_event, register_listener
 from config_manager import get_active_profile_name
+from sidebar_layout import ContentContainer, Sidebar, TopBar
 from ui import (
     ACCENT,
     SUCCESS,
@@ -25,29 +28,16 @@ from ui import (
 try:
     from kanban.ui_board import build_kanban_section
     KANBAN_AVAILABLE = True
-except Exception:
+except Exception as e:
+    print(f"Warning: Kanban module failed to load: {e}")
+    import traceback
+    traceback.print_exc()
     KANBAN_AVAILABLE = False
-
-ASCII_BANNER = """
-                ,----,   ,---,                 ,----, 
-              ,/   .`|,`--.' |               ,/   .`| 
-   ,---,    ,`   .'  :|   :  :    ,---,    ,`   .'  : 
-,`--.' |  ;    ;     /'   '  ; ,`--.' |  ;    ;     / 
-|   :  :.'___,/    ,' |   |  | |   :  :.'___,/    ,'  
-:   |  '|    :     |  '   :  ; :   |  '|    :     |   
-|   :  |;    |.';  ;  |   |  ' |   :  |;    |.';  ;   
-'   '  ;`----'  |  |  '   :  | '   '  ;`----'  |  |   
-|   |  |    '   :  ;  ;   |  ; |   |  |    '   :  ;   
-'   :  ;    |   |  '  `---'. | '   :  ;    |   |  '   
-|   |  '    '   :  |   `--..`; |   |  '    '   :  |   
-'   :  |    ;   |.'   .--,_    '   :  |    ;   |.'    
-;   |.'     '---'     |    |`. ;   |.'     '---'      
-'---'                 `-- -`, ;'---'                  
-                        '---`"                       
-"""
 
 
 class ActivityPanel(QtWidgets.QGroupBox):
+    """Activity log panel."""
+    
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__("Operations Center", parent)
         layout = QtWidgets.QVBoxLayout(self)
@@ -80,164 +70,56 @@ class ActivityPanel(QtWidgets.QGroupBox):
         self.text.verticalScrollBar().setValue(self.text.verticalScrollBar().maximum())
 
 
-class HeroHeader(QtWidgets.QFrame):
-    settings_requested = QtCore.Signal()
-
+class MainWindow(QtWidgets.QMainWindow):
+    """Main application window with sidebar navigation."""
+    
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__(parent)
-        self.setObjectName("heroHeader")
-        self.setStyleSheet(
-            """
-            QFrame#heroHeader {
-                background-color: rgba(20, 36, 59, 0.72);
-                border: 1px solid rgba(56, 189, 248, 0.25);
-                border-radius: 24px;
-            }
-            """
-        )
+        self.setWindowTitle("IT!IT – OA Systems Operator Console")
+        self.setMinimumSize(1280, 720)  # Responsive minimum
+        self.resize(1600, 900)  # Default size
 
-        layout = QtWidgets.QGridLayout(self)
-        layout.setContentsMargins(32, 28, 32, 28)
-        layout.setHorizontalSpacing(32)
-        layout.setVerticalSpacing(12)
-
-        # Logo on the left
-        logo_container = QtWidgets.QWidget()
-        logo_layout = QtWidgets.QVBoxLayout(logo_container)
-        logo_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        logo_layout.setSpacing(4)
-        
-        # Create a styled logo box
-        logo_frame = QtWidgets.QFrame()
-        logo_frame.setFixedSize(160, 160)
-        logo_frame.setStyleSheet(
-            f"""
-            QFrame {{
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 rgba(56, 189, 248, 0.15),
-                    stop:1 rgba(99, 102, 241, 0.15));
-                border: 2px solid {ACCENT};
-                border-radius: 20px;
-            }}
-            """
-        )
-        
-        logo_text = QtWidgets.QLabel("IT!IT")
-        logo_text.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        logo_text.setStyleSheet(
-            f"background: transparent; color: {ACCENT}; "
-            "font-size: 48px; font-weight: 900; letter-spacing: -0.02em;"
-        )
-        
-        logo_frame_layout = QtWidgets.QVBoxLayout(logo_frame)
-        logo_frame_layout.addWidget(logo_text)
-        logo_layout.addWidget(logo_frame)
-        
-        oa_label = QtWidgets.QLabel("OA Tool")
-        oa_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        oa_label.setStyleSheet(
-            f"color: {TEXT_MUTED}; font-size: 13px; font-weight: 600; "
-            "letter-spacing: 0.15em; background: transparent;"
-        )
-        logo_layout.addWidget(oa_label)
-
-        # Title and subtitle
-        title_container = QtWidgets.QWidget()
-        title_layout = QtWidgets.QVBoxLayout(title_container)
-        title_layout.setSpacing(8)
-        
-        title = QtWidgets.QLabel("IT!IT Automation")
-        title.setStyleSheet("font-size: 28px; font-weight: 700; letter-spacing: 0.02em;")
-        title_layout.addWidget(title)
-
-        subtitle = QtWidgets.QLabel("Collab with Codex&Claude")
-        subtitle.setWordWrap(True)
-        subtitle.setStyleSheet(f"color: {TEXT_MUTED}; font-size: 14px; letter-spacing: 0.08em;")
-        title_layout.addWidget(subtitle)
-        title_layout.addStretch()
-
-        self.status_badge = QtWidgets.QLabel()
-        self.status_badge.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.status_badge.setMinimumWidth(220)
-        self.status_badge.setStyleSheet(
-            f"background-color: rgba(56, 189, 248, 0.12); color: {ACCENT}; padding: 12px 16px;"
-            "border-radius: 16px; font-weight: 600;"
-        )
-
-        self.settings_button = QtWidgets.QPushButton("⚙ Settings")
-        self.settings_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        self.settings_button.setStyleSheet(
-            f"background-color: {ACCENT}; color: #051221; font-weight: 700; padding: 12px 18px; border-radius: 10px;"
-        )
-        self.settings_button.clicked.connect(self.settings_requested.emit)
-
-        layout.addWidget(logo_container, 0, 0, 3, 1)
-        layout.addWidget(title_container, 0, 1, 2, 1)
-        layout.addWidget(self.status_badge, 0, 2, 2, 1)
-        layout.addWidget(self.settings_button, 2, 2)
-
-    def update_badge(self, profile: str) -> None:
-        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-        self.status_badge.setText(f"● {profile} • {now}")
-
-
-class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self) -> None:
-        super().__init__()
-        self.setWindowTitle("IT!IT OA Tool")
-        self.resize(1240, 820)
-        
-        # Set window icon (taskbar and title bar)
-        # Place your logo.png or logo.ico in the project root
-        icon_path = "logo.png"  # or "logo.ico"
+        # Set window icon
+        icon_path = "logo.png"
         if Path(icon_path).exists():
             self.setWindowIcon(QtGui.QIcon(icon_path))
 
-        central = QtWidgets.QWidget()
+        # Main layout with sidebar
+        central = QtWidgets.QWidget(self)
         self.setCentralWidget(central)
-        root_layout = QtWidgets.QVBoxLayout(central)
-        root_layout.setContentsMargins(32, 28, 32, 24)
-        root_layout.setSpacing(24)
+        main_layout = QtWidgets.QVBoxLayout(central)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        self.header = HeroHeader()
-        self.header.settings_requested.connect(self.open_settings)
-        root_layout.addWidget(self.header)
+        # Top bar (no menu toggle button)
+        self.top_bar = TopBar()
+        self.top_bar.settings_requested.connect(self.open_settings)
+        main_layout.addWidget(self.top_bar)
 
-        self.tabs = QtWidgets.QTabWidget()
-        self.tabs.setTabPosition(QtWidgets.QTabWidget.TabPosition.North)
-        self.tabs.setStyleSheet(
-            f"""
-            QTabWidget::pane {{
-                border: 1px solid rgba(56, 189, 248, 0.2);
-                border-radius: 12px;
-                background-color: rgba(15, 23, 42, 0.6);
-            }}
-            QTabBar::tab {{
-                background-color: rgba(30, 41, 59, 0.8);
-                color: {TEXT_MUTED};
-                padding: 12px 24px;
-                margin-right: 4px;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-                font-weight: 600;
-            }}
-            QTabBar::tab:selected {{
-                background-color: {ACCENT};
-                color: #051221;
-            }}
-            QTabBar::tab:hover:!selected {{
-                background-color: rgba(56, 189, 248, 0.2);
-                color: {TEXT_PRIMARY};
-            }}
-            """
-        )
-        root_layout.addWidget(self.tabs, 1)
+        # Content area with sidebar
+        content_layout = QtWidgets.QHBoxLayout()
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
 
-        self._build_tabs()
+        # Sidebar (starts collapsed at 50px)
+        self.sidebar = Sidebar()
+        self.sidebar.setMinimumWidth(50)
+        self.sidebar.setMaximumWidth(50)
+        self.sidebar.section_changed.connect(self._on_section_changed)
+        content_layout.addWidget(self.sidebar)
 
-        self.activity_panel = ActivityPanel()
-        self.tabs.addTab(self.activity_panel, "Operations Center")
+        # Content container
+        self.content = ContentContainer()
+        content_layout.addWidget(self.content, 1)
 
+        content_widget = QtWidgets.QWidget()
+        content_widget.setLayout(content_layout)
+        main_layout.addWidget(content_widget, 1)
+
+        # Build sections
+        self._build_sections()
+
+        # Status bar
         status_bar = QtWidgets.QStatusBar()
         status_bar.setStyleSheet(
             f"background-color: rgba(15, 23, 42, 0.92); color: {TEXT_MUTED}; font-size: 11px;"
@@ -248,56 +130,151 @@ class MainWindow(QtWidgets.QMainWindow):
         self.environment_label.setStyleSheet(f"color: {SUCCESS}; font-weight: 600;")
         self.status_message = QtWidgets.QLabel("Ready")
         self.status_message.setStyleSheet(f"color: {TEXT_PRIMARY};")
-        hint_label = QtWidgets.QLabel("Press Esc to exit • Use ⚙ Settings to manage configuration")
+        hint_label = QtWidgets.QLabel("Esc: Exit • ⚙: Settings • Ctrl+1-7: Quick Nav")
         hint_label.setStyleSheet(f"color: {TEXT_MUTED};")
         status_bar.addPermanentWidget(hint_label)
         status_bar.addWidget(self.environment_label)
         status_bar.addWidget(self.status_message, 1)
 
+        # Setup keyboard shortcuts
+        self._setup_shortcuts()
+
         self._update_environment()
-        self._refresh_badge()
-        self._badge_timer = QtCore.QTimer(self)
-        self._badge_timer.timeout.connect(self._refresh_badge)
-        self._badge_timer.start(60000)
 
         register_listener(self.on_log_event)
-        log_event("ui", "Operator console launched", details={"profile": get_active_profile_name()})
+        log_event("ui", "Operator console launched (new layout)", details={"profile": get_active_profile_name()})
 
-        QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Escape), self, activated=self.close)
-
-    def _build_tabs(self) -> None:
-        def create_tab(builder: Callable[[QtWidgets.QWidget], None]) -> QtWidgets.QWidget:
-            tab = QtWidgets.QWidget()
-            builder(tab)
-            return tab
-
-        self.tabs.addTab(create_tab(build_user_management_section), "User Ops")
-        self.tabs.addTab(create_tab(build_sap_section), "SAP")
-        self.tabs.addTab(create_tab(build_agile_section), "Agile")
-        self.tabs.addTab(create_tab(build_telco_section), "Telecom")
-        
-        # Add Kanban tab if available
+        # Set default section to Kanban
         if KANBAN_AVAILABLE:
-            self.tabs.addTab(create_tab(build_kanban_section), "📋 Kanban")
+            self.sidebar.set_active_section("kanban")
+            self.content.show_section("kanban")
+        else:
+            self.sidebar.set_active_section("user_mgmt")
+            self.content.show_section("user_mgmt")
+
+    def _build_sections(self) -> None:
+        """Build all content sections."""
+        # Kanban (main feature)
+        if KANBAN_AVAILABLE:
+            self.content.add_section("kanban", build_kanban_section)
+            
+        # My Tasks view (placeholder for now - will link to Kanban My Tasks)
+        def build_my_tasks(parent):
+            layout = QtWidgets.QVBoxLayout(parent)
+            label = QtWidgets.QLabel("📊 My Tasks\n\nGo to Kanban → My Tasks tab")
+            label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            label.setStyleSheet(f"color: {TEXT_MUTED}; font-size: 16px;")
+            layout.addWidget(label)
+        self.content.add_section("my_tasks", build_my_tasks)
+        
+        # Admin Panel (placeholder)
+        def build_admin(parent):
+            layout = QtWidgets.QVBoxLayout(parent)
+            label = QtWidgets.QLabel("⚙️ Admin Panel\n\nComing soon...")
+            label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+            label.setStyleSheet(f"color: {TEXT_MUTED}; font-size: 16px;")
+            layout.addWidget(label)
+        self.content.add_section("admin", build_admin)
+        
+        # User Management
+        self.content.add_section("user_mgmt", build_user_management_section)
+        
+        # SAP Tools
+        self.content.add_section("sap", build_sap_section)
+        
+        # Agile Tools
+        self.content.add_section("agile", build_agile_section)
+        
+        # Telco Tools
+        self.content.add_section("telco", build_telco_section)
+        
+        # Operations Center (Activity Log)
+        def build_operations(parent):
+            layout = QtWidgets.QVBoxLayout(parent)
+            layout.setContentsMargins(20, 20, 20, 20)
+            self.activity_panel = ActivityPanel()
+            layout.addWidget(self.activity_panel)
+        self.content.add_section("operations", build_operations)
+        
+        # Settings (will show dialog)
+        # No content needed, handled in _on_section_changed
+
+    def _on_section_changed(self, section_id: str):
+        """Handle section change."""
+        if section_id == "settings":
+            # Show settings dialog instead of section
+            self.open_settings()
+            # Keep current section active
+            return
+        
+        self.content.show_section(section_id)
+        self.status_message.setText(f"Switched to {self._get_section_name(section_id)}")
+        
+    def _get_section_name(self, section_id: str) -> str:
+        """Get friendly name for section."""
+        names = {
+            "kanban": "Kanban Board",
+            "my_tasks": "My Tasks",
+            "admin": "Admin Panel",
+            "user_mgmt": "User Management",
+            "sap": "SAP Tools",
+            "agile": "Agile Tools",
+            "telco": "Telco Tools",
+            "operations": "Operations Center",
+            "settings": "Settings"
+        }
+        return names.get(section_id, section_id.title())
+
+    # Sidebar is now always icon-only (no toggle needed)
+
+    def _setup_shortcuts(self):
+        """Setup keyboard shortcuts."""
+        # Navigation shortcuts
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+1"), self, activated=lambda: self._switch_to("kanban"))
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+2"), self, activated=lambda: self._switch_to("my_tasks"))
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+3"), self, activated=lambda: self._switch_to("user_mgmt"))
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+4"), self, activated=lambda: self._switch_to("sap"))
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+5"), self, activated=lambda: self._switch_to("agile"))
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+6"), self, activated=lambda: self._switch_to("telco"))
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+7"), self, activated=lambda: self._switch_to("operations"))
+        
+        # Settings
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+,"), self, activated=self.open_settings)
+        
+        # Exit
+        QtGui.QShortcut(QtGui.QKeySequence(QtCore.Qt.Key.Key_Escape), self, activated=self.close)
+        
+    def _switch_to(self, section_id: str):
+        """Switch to a section programmatically."""
+        self.sidebar.set_active_section(section_id)
+        self.content.show_section(section_id)
 
     def _update_environment(self) -> None:
+        """Update environment label."""
         profile = get_active_profile_name()
         self.environment_label.setText(f"Environment: {profile}")
-
-    def _refresh_badge(self) -> None:
-        self.header.update_badge(get_active_profile_name())
+        self.top_bar.set_environment(profile)
 
     def on_log_event(self, entry: dict) -> None:
+        """Handle log events."""
         self.status_message.setText(describe_event(entry))
-        self.activity_panel.append(entry)
+        if hasattr(self, 'activity_panel') and self.activity_panel:
+            self.activity_panel.append(entry)
 
     def open_settings(self) -> None:
+        """Open settings dialog."""
         show_settings_dialog(self)
         self._update_environment()
-        self._refresh_badge()
+
+    def resizeEvent(self, event):
+        """Handle window resize for responsive behavior."""
+        super().resizeEvent(event)
+        # Sidebar is now always collapsed by default and expands on hover
+        # No need for auto-collapse based on window size
 
 
 def launch() -> None:
+    """Launch the application."""
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
     apply_dark_tech_palette(app)
     window = MainWindow()
@@ -307,3 +284,4 @@ def launch() -> None:
 
 if __name__ == "__main__":
     launch()
+

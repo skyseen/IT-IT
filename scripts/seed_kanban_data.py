@@ -3,15 +3,22 @@
 from __future__ import annotations
 
 import sys
+import io
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from random import choice, randint
+
+# Set UTF-8 encoding for Windows console
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 
 # Add parent directory to path to import kanban module
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config_manager import get_kanban_config
 from kanban.database import get_db_manager
+from kanban.auth import ensure_password_initialized
 from kanban.models import KanbanColumn, KanbanTask, KanbanUser
 
 
@@ -86,6 +93,12 @@ def seed_users(session) -> dict[int, KanbanUser]:
         print(f"  ✓ Created user: {user.display_name} (ID: {user.id})")
 
     session.commit()
+
+    # Ensure all users have password hashes
+    print("Setting initial passwords (ChangeMe123!)...")
+    for user in user_dict.values():
+        ensure_password_initialized(user, default_password="ChangeMe123!", db_manager=None)
+    print("  ✓ Passwords initialized (users must change on first login)")
     return user_dict
 
 

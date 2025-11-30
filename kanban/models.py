@@ -38,6 +38,9 @@ class KanbanUser(Base):
     avatar_color = Column(String(7), default="#60A5FA")
     department = Column(String(100))
     is_active = Column(Boolean, default=True)
+    password_hash = Column(String(255))
+    password_last_changed = Column(DateTime)
+    password_reset_required = Column(Boolean, default=False)
 
     # Audit fields
     created_at = Column(DateTime, default=datetime.now)
@@ -56,6 +59,75 @@ class KanbanUser(Base):
 
     def __repr__(self) -> str:
         return f"<KanbanUser(id={self.id}, username='{self.username}', display_name='{self.display_name}')>"
+
+
+class KanbanGroup(Base):
+    """Group model for assigning multiple users to tasks."""
+
+    __tablename__ = "kanban_groups"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False, unique=True)
+    description = Column(Text)
+    color = Column(String(7), default="#60A5FA")  # Display color for UI
+    is_active = Column(Boolean, default=True)
+
+    # Audit fields
+    created_at = Column(DateTime, default=datetime.now)
+    created_by = Column(Integer, ForeignKey("kanban_users.id"))
+    modified_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    modified_by = Column(Integer, ForeignKey("kanban_users.id"))
+
+    # Relationships
+    members = relationship("KanbanGroupMember", back_populates="group", cascade="all, delete-orphan")
+    assigned_tasks = relationship("KanbanTask", back_populates="assigned_group")
+
+    def __repr__(self) -> str:
+        return f"<KanbanGroup(id={self.id}, name='{self.name}')>"
+    
+    @property
+    def member_count(self) -> int:
+        """Get count of active members in group."""
+        if hasattr(self, '_member_count'):
+            return self._member_count
+        
+        session = object_session(self)
+        if not session or not self.id:
+            return 0
+        
+        from sqlalchemy import func
+        count = (
+            session.query(func.count(KanbanGroupMember.id))
+            .filter(KanbanGroupMember.group_id == self.id)
+            .scalar()
+        )
+        return count or 0
+
+
+class KanbanGroupMember(Base):
+    """Junction table for group membership."""
+
+    __tablename__ = "kanban_group_members"
+
+    id = Column(Integer, primary_key=True)
+    group_id = Column(Integer, ForeignKey("kanban_groups.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("kanban_users.id", ondelete="CASCADE"), nullable=False, index=True)
+    
+    # Member role within group (optional future feature)
+    role = Column(String(50), default="member")  # lead, member
+    
+    # Audit
+    added_at = Column(DateTime, default=datetime.now)
+    added_by = Column(Integer, ForeignKey("kanban_users.id"))
+
+    # Relationships
+    group = relationship("KanbanGroup", back_populates="members")
+    user = relationship("KanbanUser", foreign_keys=[user_id])
+
+    __table_args__ = (UniqueConstraint("group_id", "user_id", name="uq_group_user"),)
+
+    def __repr__(self) -> str:
+        return f"<KanbanGroupMember(group_id={self.group_id}, user_id={self.user_id})>"
 
 
 class KanbanColumn(Base):
@@ -104,6 +176,7 @@ class KanbanTask(Base):
 
     # Assignment & Ownership
     assigned_to = Column(Integer, ForeignKey("kanban_users.id"), index=True)
+    assigned_group_id = Column(Integer, ForeignKey("kanban_groups.id"), index=True)  # Group assignment
     created_by = Column(Integer, ForeignKey("kanban_users.id"), nullable=False)
 
     # Priority & Status
@@ -140,6 +213,7 @@ class KanbanTask(Base):
     # Relationships
     column = relationship("KanbanColumn", back_populates="tasks")
     assignee = relationship("KanbanUser", foreign_keys=[assigned_to], back_populates="assigned_tasks")
+    assigned_group = relationship("KanbanGroup", foreign_keys=[assigned_group_id], back_populates="assigned_tasks")
     creator = relationship("KanbanUser", foreign_keys=[created_by], back_populates="created_tasks")
     activity_logs = relationship("KanbanActivityLog", back_populates="task", cascade="all, delete-orphan")
     comments = relationship("KanbanComment", back_populates="task", cascade="all, delete-orphan")
@@ -162,10 +236,51 @@ class KanbanTask(Base):
 
     @property
     def is_overdue(self) -> bool:
-        """Check if task is overdue."""
-        if not self.deadline or self.status == "completed":
+        """
+        Check if task is currently overdue.
+        
+        A task is NOT overdue if:
+        - No deadline is set
+        - Status is "archived" (hidden from workflow)
+        - In "Done" column (workflow complete)
+        - Already completed
+        
+        A task IS overdue if:
+        - Has a deadline
+        - Deadline has passed
+        - Not in Done column and not archived
+        """
+        if not self.deadline:
             return False
-        return datetime.now().date() > self.deadline
+        
+        # If archived, never show as overdue
+        if self.status == "archived":
+            return False
+        
+        # If in Done column, workflow is complete (not overdue)
+        if self.column and self.column.name == "Done":
+            return False
+        
+        # Check if deadline has passed
+        today = datetime.now().date()
+        return today > self.deadline
+    
+    @property
+    def was_completed_late(self) -> bool:
+        """
+        Check if task was completed after its deadline.
+        Useful for performance metrics and reporting.
+        
+        Returns True only if:
+        - Task has a deadline
+        - Task has a completed_at timestamp
+        - Task was completed after the deadline
+        """
+        if not self.deadline or not self.completed_at:
+            return False
+        
+        completed_date = self.completed_at.date() if isinstance(self.completed_at, datetime) else self.completed_at
+        return completed_date > self.deadline
 
     @property
     def comment_count(self) -> int:
@@ -337,6 +452,7 @@ class KanbanSession(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("kanban_users.id", ondelete="CASCADE"), nullable=False, index=True)
     session_token = Column(String(255), unique=True, nullable=False)
+    remember_me = Column(Boolean, default=False)
     ip_address = Column(String(45))
     user_agent = Column(Text)
 

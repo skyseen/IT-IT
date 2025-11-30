@@ -32,6 +32,9 @@ CREATE TABLE kanban_users (
     avatar_color VARCHAR(7) DEFAULT '#60A5FA',
     department VARCHAR(100),
     is_active BOOLEAN DEFAULT TRUE,
+    password_hash VARCHAR(255),
+    password_last_changed TIMESTAMP,
+    password_reset_required BOOLEAN DEFAULT FALSE,
     
     -- Audit fields
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -247,6 +250,7 @@ CREATE TABLE kanban_sessions (
     session_token VARCHAR(255) UNIQUE NOT NULL,
     ip_address VARCHAR(45),
     user_agent TEXT,
+    remember_me BOOLEAN DEFAULT FALSE,
     
     login_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
