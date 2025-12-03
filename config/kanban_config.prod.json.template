@@ -1,0 +1,14 @@
+{
+  "environment": "production",
+  "database": {
+    "host": "YOUR_SERVER_IP_HERE",
+    "port": 5432,
+    "database": "itit_kanban_prod",
+    "username": "kanban_prod",
+    "password": "YOUR_PROD_PASSWORD_HERE",
+    "pool_size": 10,
+    "max_overflow": 5
+  }
+}
+
+

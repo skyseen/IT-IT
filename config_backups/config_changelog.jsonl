@@ -151,3 +151,11 @@
 {"timestamp": "20251130-144444", "action": "update_kanban_config", "backup_file": "it_tool_config_20251130-144444.json", "active_profile": "default", "metadata": {"profile": "default"}}
 {"timestamp": "20251130-145107", "action": "update_kanban_config", "backup_file": "it_tool_config_20251130-145107.json", "active_profile": "default", "metadata": {"profile": "default"}}
 {"timestamp": "20251130-145544", "action": "update_paths", "backup_file": "it_tool_config_20251130-145544.json", "active_profile": "default", "metadata": {"profile": "default", "key": "sap_ticket_image_dir"}}
+{"timestamp": "20251201-074559", "action": "update_kanban_config", "backup_file": "it_tool_config_20251201-074559.json", "active_profile": "default", "metadata": {"profile": "default"}}
+{"timestamp": "20251201-074858", "action": "switch_profile", "backup_file": "it_tool_config_20251201-074858.json", "active_profile": "KEN", "metadata": {"profile": "KEN"}}
+{"timestamp": "20251201-074902", "action": "switch_profile", "backup_file": "it_tool_config_20251201-074902.json", "active_profile": "default", "metadata": {"profile": "default"}}
+{"timestamp": "20251201-074913", "action": "switch_profile", "backup_file": "it_tool_config_20251201-074913.json", "active_profile": "KEN", "metadata": {"profile": "KEN"}}
+{"timestamp": "20251201-092806", "action": "update_kanban_config", "backup_file": "it_tool_config_20251201-092806.json", "active_profile": "KEN", "metadata": {"profile": "KEN"}}
+{"timestamp": "20251201-093058", "action": "switch_profile", "backup_file": "it_tool_config_20251201-093058.json", "active_profile": "default", "metadata": {"profile": "default"}}
+{"timestamp": "20251201-093103", "action": "switch_profile", "backup_file": "it_tool_config_20251201-093103.json", "active_profile": "KEN", "metadata": {"profile": "KEN"}}
+{"timestamp": "20251201-125725", "action": "update_kanban_config", "backup_file": "it_tool_config_20251201-125725.json", "active_profile": "KEN", "metadata": {"profile": "KEN"}}

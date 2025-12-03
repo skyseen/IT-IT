@@ -1,0 +1,14 @@
+{
+  "environment": "test",
+  "database": {
+    "host": "10.212.56.57",
+    "port": 5432,
+    "database": "itit_kanban_test",
+    "username": "kanban_test",
+    "password": "TestPassword123!",
+    "pool_size": 5,
+    "max_overflow": 3
+  }
+}
+
+

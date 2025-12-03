@@ -184,3 +184,4 @@ Error details: [Specific exception message]
 | **Error Messages** | ❌ Technical jargon | ✅ User-friendly |
 | **User Experience** | ❌ Frustrating | ✅ Smooth & clear |
 
+

@@ -15,6 +15,8 @@ DROP TABLE IF EXISTS kanban_attachments CASCADE;
 DROP TABLE IF EXISTS kanban_comments CASCADE;
 DROP TABLE IF EXISTS kanban_activity_log CASCADE;
 DROP TABLE IF EXISTS kanban_tasks CASCADE;
+DROP TABLE IF EXISTS kanban_group_members CASCADE;
+DROP TABLE IF EXISTS kanban_groups CASCADE;
 DROP TABLE IF EXISTS kanban_columns CASCADE;
 DROP TABLE IF EXISTS kanban_sessions CASCADE;
 DROP TABLE IF EXISTS kanban_settings CASCADE;
@@ -73,6 +75,46 @@ CREATE INDEX idx_columns_position ON kanban_columns(position);
 CREATE INDEX idx_columns_is_active ON kanban_columns(is_active);
 
 -- ===========================================================================
+-- TABLE: kanban_groups
+-- ===========================================================================
+CREATE TABLE kanban_groups (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    color VARCHAR(7) DEFAULT '#60A5FA',
+    is_active BOOLEAN DEFAULT TRUE,
+    
+    -- Audit fields
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES kanban_users(id),
+    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_by INTEGER REFERENCES kanban_users(id)
+);
+
+CREATE INDEX idx_groups_name ON kanban_groups(name);
+CREATE INDEX idx_groups_is_active ON kanban_groups(is_active);
+
+-- ===========================================================================
+-- TABLE: kanban_group_members
+-- ===========================================================================
+CREATE TABLE kanban_group_members (
+    id SERIAL PRIMARY KEY,
+    group_id INTEGER NOT NULL REFERENCES kanban_groups(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES kanban_users(id) ON DELETE CASCADE,
+    role VARCHAR(50) DEFAULT 'member',
+    
+    -- Audit
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    added_by INTEGER REFERENCES kanban_users(id),
+    
+    -- Ensure unique membership
+    CONSTRAINT uq_group_user UNIQUE(group_id, user_id)
+);
+
+CREATE INDEX idx_group_members_group_id ON kanban_group_members(group_id);
+CREATE INDEX idx_group_members_user_id ON kanban_group_members(user_id);
+
+-- ===========================================================================
 -- TABLE: kanban_tasks
 -- ===========================================================================
 CREATE TABLE kanban_tasks (
@@ -89,6 +131,7 @@ CREATE TABLE kanban_tasks (
     
     -- Assignment & Ownership
     assigned_to INTEGER REFERENCES kanban_users(id),
+    assigned_group_id INTEGER REFERENCES kanban_groups(id),
     created_by INTEGER REFERENCES kanban_users(id) NOT NULL,
     
     -- Priority & Status
@@ -126,6 +169,7 @@ CREATE TABLE kanban_tasks (
 -- Indexes for performance
 CREATE INDEX idx_tasks_column ON kanban_tasks(column_id) WHERE is_deleted = FALSE;
 CREATE INDEX idx_tasks_assigned ON kanban_tasks(assigned_to) WHERE is_deleted = FALSE;
+CREATE INDEX idx_tasks_assigned_group ON kanban_tasks(assigned_group_id) WHERE is_deleted = FALSE;
 CREATE INDEX idx_tasks_deadline ON kanban_tasks(deadline) WHERE is_deleted = FALSE;
 CREATE INDEX idx_tasks_category ON kanban_tasks(category) WHERE is_deleted = FALSE;
 CREATE INDEX idx_tasks_status ON kanban_tasks(status) WHERE is_deleted = FALSE;
@@ -397,8 +441,19 @@ BEGIN
     RAISE NOTICE '========================================';
     RAISE NOTICE 'Kanban Database Schema Setup Complete!';
     RAISE NOTICE '========================================';
-    RAISE NOTICE 'Tables created: 9';
-    RAISE NOTICE 'Indexes created: 20+';
+    RAISE NOTICE 'Tables created: 11';
+    RAISE NOTICE '  - kanban_users';
+    RAISE NOTICE '  - kanban_groups';
+    RAISE NOTICE '  - kanban_group_members';
+    RAISE NOTICE '  - kanban_columns';
+    RAISE NOTICE '  - kanban_tasks';
+    RAISE NOTICE '  - kanban_activity_log';
+    RAISE NOTICE '  - kanban_comments';
+    RAISE NOTICE '  - kanban_attachments';
+    RAISE NOTICE '  - kanban_dependencies';
+    RAISE NOTICE '  - kanban_sessions';
+    RAISE NOTICE '  - kanban_settings';
+    RAISE NOTICE 'Indexes created: 25+';
     RAISE NOTICE 'Triggers created: 2';
     RAISE NOTICE 'Views created: 3';
     RAISE NOTICE '';

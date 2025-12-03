@@ -50,7 +50,7 @@
       "cc": "kenyi.seen@ingrasys.com"
     }
   },
-  "active_profile": "default",
+  "active_profile": "KEN",
   "profiles": {
     "KEN": {
       "paths": {
@@ -103,6 +103,51 @@
           "to": "windy.y.zhang@fii-foxconn.com",
           "cc": "alex.ng@ingrasys.com; chinlun.wong@ingrasys.com; oscar.loo@ingrasys.com;chinyong.lim@ingrasys.com;lingyun.niu@foxconn.com.sg;SheawReei.Tey@ingrasys.com"
         }
+      },
+      "kanban": {
+        "enabled": true,
+        "features": {
+          "auto_create_tasks": true,
+          "workflow_integration": {
+            "sap_creation": true,
+            "sap_disable": true,
+            "agile_creation": true,
+            "agile_reset": true,
+            "telco_singtel": true,
+            "telco_m1": true,
+            "user_onboarding": false,
+            "user_disable": false
+          }
+        },
+        "remembered_session_token": "6W-tm7FBUsTXXbIDcEqRs26z_V81lI_2hSpIeyhGWjNXtkLkZFK9WzCa6uTu0GJ-",
+        "default_columns": [
+          {
+            "name": "Backlog",
+            "position": 0,
+            "color": "#94A3B8"
+          },
+          {
+            "name": "To Do",
+            "position": 1,
+            "color": "#60A5FA"
+          },
+          {
+            "name": "In Progress",
+            "position": 2,
+            "color": "#FBBF24",
+            "wip_limit": 20
+          },
+          {
+            "name": "Review",
+            "position": 3,
+            "color": "#A78BFA"
+          },
+          {
+            "name": "Done",
+            "position": 4,
+            "color": "#34D399"
+          }
+        ]
       }
     }
   },

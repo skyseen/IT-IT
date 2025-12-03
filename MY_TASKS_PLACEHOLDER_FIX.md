@@ -242,3 +242,4 @@ The issue with placeholder text persisting should now be completely resolved. Th
 
 **Test it now:** `python main.py`
 
+

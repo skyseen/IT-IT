@@ -250,3 +250,4 @@ For now, the Tkinter window works correctly with the fixes applied.
 ✅ **Clean resource management** - Root window properly destroyed  
 ✅ **Preview window displays correctly** - All content visible and interactive
 
+
