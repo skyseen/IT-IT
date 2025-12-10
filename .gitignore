@@ -69,4 +69,20 @@ config_backups/
 *.db
 *.sqlite
 
+# ===========================================
+# BUILD ARTIFACTS
+# ===========================================
+
+# PyInstaller
+dist/
+build/IT-IT/
+*.spec.bak
+
+# Generated icon (can regenerate from logo.png)
+build/app_icon.ico
+
+# Installer output
+*.Setup*.exe
+
+
 

@@ -3,10 +3,42 @@
 from __future__ import annotations
 
 import datetime
+import logging
+import sys
 from pathlib import Path
 from typing import Callable, Optional
 
 from PySide6 import QtCore, QtGui, QtWidgets
+
+from version import __version__, __app_name__, __build_date__
+
+
+def _setup_logging() -> logging.Logger:
+    """Configure logging with file and console handlers."""
+    # Determine log directory
+    if getattr(sys, 'frozen', False):
+        # Running as bundled EXE
+        log_dir = Path(sys.executable).parent / "logs"
+    else:
+        # Running from source
+        log_dir = Path(__file__).parent / "logs"
+    
+    log_dir.mkdir(exist_ok=True)
+    log_file = log_dir / "app.log"
+    
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_file, encoding='utf-8'),
+            logging.StreamHandler(sys.stdout),
+        ]
+    )
+    return logging.getLogger(__name__)
+
+
+logger = _setup_logging()
 
 from activity_log import describe_event, get_recent_events, log_event, register_listener
 from config_manager import get_active_profile_name
@@ -275,6 +307,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
 def launch() -> None:
     """Launch the application."""
+    # Log version info at startup
+    logger.info("=" * 50)
+    logger.info(f"{__app_name__} v{__version__}")
+    logger.info(f"Build Date: {__build_date__}")
+    logger.info(f"Python: {sys.version}")
+    if getattr(sys, 'frozen', False):
+        logger.info(f"Running as bundled EXE from: {sys.executable}")
+    else:
+        logger.info(f"Running from source: {__file__}")
+    logger.info("=" * 50)
+    
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
     apply_dark_tech_palette(app)
     window = MainWindow()

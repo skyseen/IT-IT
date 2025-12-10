@@ -251,3 +251,6 @@ For now, the Tkinter window works correctly with the fixes applied.
 ✅ **Preview window displays correctly** - All content visible and interactive
 
 
+
+
+

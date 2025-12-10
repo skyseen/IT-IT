@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -48,13 +49,24 @@ class DatabaseManager:
 
     def _get_default_config_path(self) -> str:
         """Get default config path relative to project root."""
-        # Assume we're in IT-IT/kanban/database.py
-        project_root = Path(__file__).resolve().parent.parent
-        config_file = project_root / "config" / "kanban_config.json"
+        # Check if running as PyInstaller bundle
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            # Running as bundled EXE
+            # sys._MEIPASS points to _internal folder, EXE is in parent
+            exe_dir = Path(sys.executable).parent
+            config_file = exe_dir / "config" / "kanban_config.json"
+            
+            # If config doesn't exist, try production config
+            if not config_file.exists():
+                config_file = exe_dir / "config" / "kanban_config_production.json"
+        else:
+            # Running from source - assume we're in IT-IT/kanban/database.py
+            project_root = Path(__file__).resolve().parent.parent
+            config_file = project_root / "config" / "kanban_config.json"
 
-        # If config doesn't exist, try production config
-        if not config_file.exists():
-            config_file = project_root / "config" / "kanban_config_production.json"
+            # If config doesn't exist, try production config
+            if not config_file.exists():
+                config_file = project_root / "config" / "kanban_config_production.json"
 
         return str(config_file)
 

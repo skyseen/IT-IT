@@ -185,3 +185,6 @@ Error details: [Specific exception message]
 | **User Experience** | ❌ Frustrating | ✅ Smooth & clear |
 
 
+
+
+

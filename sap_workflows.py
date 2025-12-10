@@ -8,8 +8,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
-import tkinter as tk
-from tkinter import filedialog, messagebox, simpledialog, ttk
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from config_manager import get_path, set_path
 from email_service import send_sap_creation_email
@@ -387,24 +386,348 @@ def _extract_follow_text(other_desc_map: Dict[str, str], employee_nos: List[str]
     return ""
 
 
-def prompt_ticket_details(parent: tk.Toplevel) -> Tuple[str, str]:
-    dialog_kwargs = {
-        "title": "Select Ticket Image File",
-        "filetypes": [("Image files", "*.png;*.jpg;*.jpeg;*.bmp;*.gif"), ("All files", "*.*")],
-    }
+def prompt_ticket_details(parent: QtWidgets.QWidget) -> Tuple[str, str]:
+    """Prompt user for ticket image and number using PySide6 dialogs."""
+    # File dialog for ticket image
     default_ticket_dir = get_path("sap_ticket_image_dir")
-    if default_ticket_dir and os.path.isdir(default_ticket_dir):
-        dialog_kwargs["initialdir"] = default_ticket_dir
-
-    ticket_img_path = filedialog.askopenfilename(parent=parent, **dialog_kwargs)
+    if not default_ticket_dir or not os.path.isdir(default_ticket_dir):
+        default_ticket_dir = ""
+    
+    ticket_img_path, _ = QtWidgets.QFileDialog.getOpenFileName(
+        parent,
+        "Select Ticket Image File",
+        default_ticket_dir,
+        "Image files (*.png *.jpg *.jpeg *.bmp *.gif);;All files (*.*)"
+    )
+    
     if ticket_img_path:
         set_path("sap_ticket_image_dir", os.path.dirname(ticket_img_path))
-
-    ticket_no = simpledialog.askstring("Ticket Number", "Enter ticket number (e.g. S0000YE9G):", parent=parent)
-    if not ticket_no:
+    
+    # Input dialog for ticket number
+    ticket_no, ok = QtWidgets.QInputDialog.getText(
+        parent,
+        "Ticket Number",
+        "Enter ticket number (e.g. S0000YE9G):"
+    )
+    
+    if not ok or not ticket_no:
         raise ValueError("Ticket number is required")
-
+    
     return ticket_no, ticket_img_path
+
+
+class SapPreviewDialog(QtWidgets.QDialog):
+    """SAP Account Creation Preview Dialog using PySide6."""
+    
+    def __init__(
+        self,
+        rows_to_append: List[Dict[str, str]],
+        already_created: List[str],
+        cons_path: str,
+        user_excel_path: str,
+        other_desc_map: Dict[str, str],
+        parent: Optional[QtWidgets.QWidget] = None
+    ):
+        super().__init__(parent)
+        self.rows_to_append = rows_to_append
+        self.already_created = already_created
+        self.cons_path = cons_path
+        self.user_excel_path = user_excel_path
+        self.other_desc_map = other_desc_map
+        
+        # Check for empty descriptions
+        self.empty_other_desc = []
+        for row in rows_to_append:
+            emp_no = row.get("工號（Employee No）", "")
+            other_desc = str(row.get("其他說明（Other Description）", "")).strip()
+            if not other_desc or other_desc.lower() == "nan":
+                self.empty_other_desc.append(emp_no)
+        
+        self._setup_ui()
+    
+    def _setup_ui(self):
+        self.setWindowTitle("SAP_PREVIEW_MODULE")
+        self.setMinimumSize(1200, 800)
+        
+        # Dark theme styling
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #0d1117;
+                color: #c9d1d9;
+            }
+            QLabel {
+                color: #c9d1d9;
+            }
+            QGroupBox {
+                background-color: #21262d;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+                margin-top: 12px;
+                padding: 15px;
+                font-family: Consolas;
+                font-weight: bold;
+                color: #f79000;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px;
+                color: #f79000;
+            }
+            QTableWidget {
+                background-color: #161b22;
+                border: 1px solid #30363d;
+                gridline-color: #30363d;
+                color: #c9d1d9;
+                font-family: Consolas;
+                font-size: 10pt;
+            }
+            QTableWidget::item {
+                padding: 5px;
+            }
+            QTableWidget::item:selected {
+                background-color: #388bfd;
+            }
+            QHeaderView::section {
+                background-color: #21262d;
+                color: #f79000;
+                padding: 8px;
+                border: 1px solid #30363d;
+                font-family: Consolas;
+                font-weight: bold;
+            }
+            QPushButton {
+                background-color: #238636;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                font-family: Consolas;
+                font-size: 11pt;
+                font-weight: bold;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background-color: #2ea043;
+            }
+            QPushButton:pressed {
+                background-color: #1a7f37;
+            }
+            QTextEdit {
+                background-color: #21262d;
+                border: 1px solid #30363d;
+                border-radius: 4px;
+                color: #c9d1d9;
+                font-family: Consolas;
+                font-size: 10pt;
+            }
+            QScrollBar:vertical {
+                background-color: #161b22;
+                width: 12px;
+            }
+            QScrollBar::handle:vertical {
+                background-color: #30363d;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background-color: #484f58;
+            }
+        """)
+        
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(25, 25, 25, 25)
+        layout.setSpacing(15)
+        
+        # Header
+        header_label = QtWidgets.QLabel(">>> SAP ACCOUNT CREATION PREVIEW")
+        header_label.setStyleSheet("font-family: Consolas; font-size: 16pt; font-weight: bold; color: #f79000;")
+        layout.addWidget(header_label)
+        
+        subtitle_label = QtWidgets.QLabel("// Review and confirm account creation batch")
+        subtitle_label.setStyleSheet("font-family: Consolas; font-size: 9pt; color: #7d8590;")
+        layout.addWidget(subtitle_label)
+        
+        # Empty Other Description Warning
+        if self.empty_other_desc:
+            warning_group = QtWidgets.QGroupBox("⚠️ EMPTY_OTHER_DESCRIPTION_WARNING")
+            warning_layout = QtWidgets.QVBoxLayout(warning_group)
+            warning_text = QtWidgets.QTextEdit()
+            warning_text.setReadOnly(True)
+            warning_text.setMaximumHeight(100)
+            warning_text.setStyleSheet("background-color: #3d2f1f; color: #ffa657;")
+            warning_text.setText(
+                f"⚠️ EMPTY OTHER DESCRIPTION: {', '.join(self.empty_other_desc)}\n\n"
+                f"These {len(self.empty_other_desc)} employee ID(s) have no value in '其他說明（Other Description）'.\n"
+                f"The process will continue, but please verify if this is intentional."
+            )
+            warning_layout.addWidget(warning_text)
+            layout.addWidget(warning_group)
+        
+        # Existing Accounts Skipped
+        existing_group = QtWidgets.QGroupBox("⚠️ EXISTING_ACCOUNTS_SKIPPED")
+        existing_layout = QtWidgets.QVBoxLayout(existing_group)
+        existing_text = QtWidgets.QTextEdit()
+        existing_text.setReadOnly(True)
+        existing_text.setMaximumHeight(100)
+        
+        if self.already_created:
+            existing_text.setStyleSheet("background-color: #3d1f1f; color: #ff6b6b;")
+            existing_text.setText(
+                f"❌ DUPLICATES FOUND: {', '.join(self.already_created)}\n\n"
+                f"These {len(self.already_created)} employee ID(s) already exist in the consolidated Excel.\n"
+                f"They will NOT be inserted again."
+            )
+        else:
+            existing_text.setStyleSheet("background-color: #21262d; color: #7d8590;")
+            existing_text.setText("✅ [NONE] - All employee IDs are new.")
+        
+        existing_layout.addWidget(existing_text)
+        layout.addWidget(existing_group)
+        
+        # New Accounts Table
+        table_group = QtWidgets.QGroupBox("NEW_ACCOUNTS_QUEUE")
+        table_layout = QtWidgets.QVBoxLayout(table_group)
+        
+        # Preview columns (exclude STATUS for new accounts)
+        preview_columns = [col for col in SAP_COLUMNS if col != "STATUS"]
+        
+        self.table = QtWidgets.QTableWidget()
+        self.table.setColumnCount(len(preview_columns))
+        self.table.setHorizontalHeaderLabels(preview_columns)
+        self.table.setRowCount(len(self.rows_to_append))
+        self.table.setAlternatingRowColors(True)
+        self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        
+        # Set column widths
+        for col_idx, col in enumerate(preview_columns):
+            if col in ("其他說明（Other Description）", "CM remark"):
+                self.table.setColumnWidth(col_idx, 260)
+            elif col in ("帳號名稱（Account Name）", "郵箱（E-mail）"):
+                self.table.setColumnWidth(col_idx, 220)
+            else:
+                self.table.setColumnWidth(col_idx, 140)
+        
+        # Populate table
+        for row_idx, row_data in enumerate(self.rows_to_append):
+            for col_idx, col in enumerate(preview_columns):
+                value = row_data.get(col, "")
+                item = QtWidgets.QTableWidgetItem(str(value))
+                item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+                self.table.setItem(row_idx, col_idx, item)
+        
+        table_layout.addWidget(self.table)
+        layout.addWidget(table_group, 1)  # Stretch
+        
+        # Summary
+        if len(self.rows_to_append) > 0:
+            summary_text = f"✅ {len(self.rows_to_append)} NEW account(s) queued for creation"
+            summary_color = "#58a6ff"
+        else:
+            summary_text = "⚠️ NO NEW accounts to create (all duplicates)"
+            summary_color = "#ff6b6b"
+        
+        summary_label = QtWidgets.QLabel(summary_text)
+        summary_label.setStyleSheet(f"font-family: Consolas; font-size: 10pt; font-weight: bold; color: {summary_color};")
+        layout.addWidget(summary_label)
+        
+        # Status label for processing
+        self.status_label = QtWidgets.QLabel("")
+        self.status_label.setStyleSheet("font-family: Consolas; font-size: 10pt; font-weight: bold; color: #f79000;")
+        layout.addWidget(self.status_label)
+        
+        # Execute button
+        self.execute_btn = QtWidgets.QPushButton("[EXECUTE] PROCESS_BATCH")
+        self.execute_btn.clicked.connect(self._on_execute)
+        layout.addWidget(self.execute_btn)
+        
+        # Center on screen
+        self.resize(1300, 900)
+        screen = QtWidgets.QApplication.primaryScreen().geometry()
+        self.move(
+            (screen.width() - self.width()) // 2,
+            (screen.height() - self.height()) // 2
+        )
+    
+    def _on_execute(self):
+        """Handle execute button click."""
+        if not self.rows_to_append:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "QUEUE_EMPTY",
+                "No accounts selected for creation."
+            )
+            return
+        
+        # Warn about empty descriptions
+        if self.empty_other_desc:
+            result = QtWidgets.QMessageBox.warning(
+                self,
+                "⚠️ EMPTY_OTHER_DESCRIPTION_WARNING",
+                f"⚠️ WARNING: {len(self.empty_other_desc)} employee ID(s) have no value in '其他說明（Other Description）':\n\n"
+                f"{', '.join(self.empty_other_desc)}\n\n"
+                f"Do you still want to proceed?",
+                QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+                QtWidgets.QMessageBox.StandardButton.No
+            )
+            if result != QtWidgets.QMessageBox.StandardButton.Yes:
+                return
+        
+        # Update status
+        self.status_label.setText("[PROCESSING] Updating consolidated database...")
+        self.execute_btn.setEnabled(False)
+        QtWidgets.QApplication.processEvents()
+        
+        # Try to save to consolidated Excel
+        try:
+            append_to_consolidated(self.cons_path, self.rows_to_append)
+            self.status_label.setText("")
+            QtWidgets.QMessageBox.information(
+                self,
+                "BATCH_SUCCESS",
+                f"[SUCCESS] {len(self.rows_to_append)} account(s) processed successfully."
+            )
+        except PermissionError:
+            self.status_label.setText("")
+            self.execute_btn.setEnabled(True)
+            QtWidgets.QMessageBox.critical(
+                self,
+                "FILE_LOCKED",
+                f"Cannot save to consolidated Excel file.\n\n"
+                f"Please close the file in Excel and try again.\n\n"
+                f"File: {self.cons_path}"
+            )
+            return
+        except Exception as e:
+            self.status_label.setText("")
+            self.execute_btn.setEnabled(True)
+            QtWidgets.QMessageBox.critical(
+                self,
+                "SAVE_ERROR",
+                f"Error saving to consolidated Excel:\n\n{str(e)}"
+            )
+            return
+        
+        # Prompt for ticket details
+        try:
+            ticket_no, ticket_img_path = prompt_ticket_details(self)
+        except ValueError as exc:
+            QtWidgets.QMessageBox.critical(self, "INPUT_ERROR", str(exc))
+            self.execute_btn.setEnabled(True)
+            return
+        
+        # Send email
+        employee_nos = [row.get("工號（Employee No）", "") for row in self.rows_to_append]
+        email_attach_paths = {
+            "user_file": self.user_excel_path,
+            "ticket_image": ticket_img_path if ticket_img_path else None,
+            "employee_nos": employee_nos,
+            "other_description_values": self.other_desc_map,
+            "ticket_no": ticket_no,
+            "follow_text": _extract_follow_text(self.other_desc_map, employee_nos),
+        }
+        send_sap_creation_email(email_attach_paths)
+        
+        self.accept()
 
 
 def build_preview_window(
@@ -414,360 +737,20 @@ def build_preview_window(
     user_excel_path: str,
     other_desc_map: Dict[str, str],
 ) -> None:
-    # Create a hidden root window (required for Toplevel to work properly)
-    root = tk.Tk()
-    root.withdraw()  # Hide the root window
+    """Build and show the SAP preview window using PySide6."""
+    # Ensure QApplication exists
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication([])
     
-    preview = tk.Toplevel(root)
-    preview.title("SAP_PREVIEW_MODULE")
-    
-    # Calculate responsive size based on screen dimensions
-    screen_width = preview.winfo_screenwidth()
-    screen_height = preview.winfo_screenheight()
-    
-    # Use 70% of screen size, but cap at reasonable maximums
-    window_width = min(int(screen_width * 0.7), 1400)
-    window_height = min(int(screen_height * 0.7), 900)
-    
-    # Center the window
-    x = (screen_width - window_width) // 2
-    y = (screen_height - window_height) // 2
-    
-    preview.geometry(f"{window_width}x{window_height}+{x}+{y}")
-    preview.configure(bg="#0d1117")
-
-    style = ttk.Style(preview)
-    style.configure("Preview.TFrame", background="#0d1117", relief="flat")
-    style.configure(
-        "Preview.TLabelframe",
-        background="#21262d",
-        foreground="#f79000",
-        borderwidth=1,
-        relief="solid",
-        padding=15,
+    dialog = SapPreviewDialog(
+        rows_to_append=rows_to_append,
+        already_created=already_created,
+        cons_path=cons_path,
+        user_excel_path=user_excel_path,
+        other_desc_map=other_desc_map,
     )
-    style.configure(
-        "Preview.TLabelframe.Label",
-        background="#21262d",
-        foreground="#f79000",
-        font=("Consolas", 11, "bold"),
-    )
-
-    # Create scrollable canvas
-    canvas = tk.Canvas(preview, bg="#0d1117", highlightthickness=0)
-    scrollbar = ttk.Scrollbar(preview, orient="vertical", command=canvas.yview)
-    scrollable_frame = ttk.Frame(canvas, style="Preview.TFrame")
-    
-    scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-    canvas.configure(yscrollcommand=scrollbar.set)
-    
-    canvas.pack(side="left", fill="both", expand=True)
-    scrollbar.pack(side="right", fill="y")
-    
-    # Mouse wheel scrolling for canvas (but not for treeview)
-    def _on_canvas_mousewheel(event):
-        # Only scroll canvas if mouse is not over the treeview
-        widget = event.widget
-        # Check if the event is from the treeview or its children
-        if hasattr(widget, 'winfo_class') and widget.winfo_class() == 'Treeview':
-            return  # Don't scroll canvas, let treeview handle it
-        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-    
-    # Bind to canvas and scrollable_frame, not all widgets
-    canvas.bind("<MouseWheel>", _on_canvas_mousewheel)
-    scrollable_frame.bind("<MouseWheel>", _on_canvas_mousewheel)
-
-    main_frame = ttk.Frame(scrollable_frame, style="Preview.TFrame", padding="25")
-    main_frame.pack(fill="both", expand=True)
-
-    header_frame = ttk.Frame(main_frame, style="Preview.TFrame")
-    header_frame.pack(fill="x", pady=(0, 25))
-    ttk.Label(
-        header_frame,
-        text=">>> SAP ACCOUNT CREATION PREVIEW",
-        font=("Consolas", 16, "bold"),
-        background="#0d1117",
-        foreground="#f79000",
-        anchor="w",
-    ).pack(fill="x")
-    ttk.Label(
-        header_frame,
-        text="// Review and confirm account creation batch",
-        font=("Consolas", 9),
-        background="#0d1117",
-        foreground="#7d8590",
-        anchor="w",
-    ).pack(fill="x", pady=(5, 0))
-
-    # Check for empty "其他說明（Other Description）" fields
-    empty_other_desc = []
-    for row in rows_to_append:
-        emp_no = row.get("工號（Employee No）", "")
-        other_desc = str(row.get("其他說明（Other Description）", "")).strip()
-        if not other_desc or other_desc.lower() == "nan":
-            empty_other_desc.append(emp_no)
-    
-    # Show warning for empty Other Description
-    if empty_other_desc:
-        other_desc_frame = ttk.LabelFrame(main_frame, text="⚠️ EMPTY_OTHER_DESCRIPTION_WARNING", style="Preview.TLabelframe")
-        other_desc_frame.pack(fill="x", pady=(0, 15))
-        other_desc_content = ttk.Frame(other_desc_frame, style="Preview.TFrame")
-        other_desc_content.pack(fill="x", padx=10, pady=10)
-        
-        bg_color = "#3d2f1f"  # Dark orange background
-        fg_color = "#ffa657"  # Light orange text
-        display_text = f"⚠️ EMPTY OTHER DESCRIPTION: {', '.join(empty_other_desc)}\n\n" \
-                      f"These {len(empty_other_desc)} employee ID(s) have no value in '其他說明（Other Description）'.\n" \
-                      f"The process will continue, but please verify if this is intentional."
-        
-        other_desc_text = tk.Text(
-            other_desc_content,
-            font=("Consolas", 10),
-            bg=bg_color,
-            fg=fg_color,
-            height=4,
-            wrap="word",
-            relief="flat",
-        )
-        other_desc_text.insert("1.0", display_text)
-        other_desc_text.configure(state="disabled")
-        other_desc_text.pack(fill="both", expand=True)
-    
-    # Show skipped accounts prominently
-    existing_frame = ttk.LabelFrame(main_frame, text="⚠️ EXISTING_ACCOUNTS_SKIPPED", style="Preview.TLabelframe")
-    existing_frame.pack(fill="x", pady=(0, 15))
-    existing_content = ttk.Frame(existing_frame, style="Preview.TFrame")
-    existing_content.pack(fill="x", padx=10, pady=10)
-    
-    if already_created:
-        # Show in red/warning color if there are duplicates
-        bg_color = "#3d1f1f"  # Dark red background
-        fg_color = "#ff6b6b"  # Light red text
-        display_text = f"❌ DUPLICATES FOUND: {', '.join(already_created)}\n\n" \
-                      f"These {len(already_created)} employee ID(s) already exist in the consolidated Excel.\n" \
-                      f"They will NOT be inserted again."
-    else:
-        bg_color = "#21262d"
-        fg_color = "#7d8590"
-        display_text = "✅ [NONE] - All employee IDs are new."
-    
-    existing_text = tk.Text(
-        existing_content,
-        font=("Consolas", 10),
-        bg=bg_color,
-        fg=fg_color,
-        height=4,
-        wrap="word",
-        relief="flat",
-    )
-    existing_text.insert("1.0", display_text)
-    existing_text.configure(state="disabled")
-    existing_text.pack(fill="both", expand=True)
-
-    new_frame = ttk.LabelFrame(main_frame, text="NEW_ACCOUNTS_QUEUE", style="Preview.TLabelframe")
-    new_frame.pack(fill="both", expand=True, pady=(0, 15))
-    tree_container = ttk.Frame(new_frame, style="Preview.TFrame")
-    tree_container.pack(fill="both", expand=True, padx=15, pady=10)
-
-    # Create vertical scrollbar
-    y_scroll = ttk.Scrollbar(tree_container, orient="vertical")
-    
-    # Create horizontal scrollbar
-    x_scroll = ttk.Scrollbar(tree_container, orient="horizontal")
-
-    # Show ALL columns in preview in exact order as consolidated Excel
-    preview_columns = SAP_COLUMNS
-    tree = ttk.Treeview(
-        tree_container,
-        columns=preview_columns,
-        show="headings",
-        height=12,
-        selectmode="extended",
-        yscrollcommand=y_scroll.set,
-        xscrollcommand=x_scroll.set,
-    )
-
-    # Configure headings and column alignment/width
-    for col in preview_columns:
-        tree.heading(col, text=col)
-        anchor = "center"
-        width = 160
-        if col in ("其他說明（Other Description）", "CM remark"):
-            anchor = "w"
-            width = 260
-        if col in ("帳號名稱（Account Name）", "郵箱（E-mail）"):
-            width = 220
-        tree.column(col, anchor=anchor, width=width, stretch=False, minwidth=100)
-
-    # Pack with proper scroll configuration
-    tree.grid(row=0, column=0, sticky="nsew")
-    y_scroll.grid(row=0, column=1, sticky="ns")
-    x_scroll.grid(row=1, column=0, sticky="ew")
-    
-    # Configure grid weights for proper resizing
-    tree_container.grid_rowconfigure(0, weight=1)
-    tree_container.grid_columnconfigure(0, weight=1)
-    
-    # Link scrollbars to tree
-    y_scroll.configure(command=tree.yview)
-    x_scroll.configure(command=tree.xview)
-    
-    # Enable mouse wheel scrolling (stop propagation to prevent canvas scroll)
-    def _on_tree_mousewheel(event):
-        tree.yview_scroll(int(-1 * (event.delta / 120)), "units")
-        return "break"  # Stop event propagation
-    
-    def _on_tree_shift_mousewheel(event):
-        tree.xview_scroll(int(-1 * (event.delta / 120)), "units")
-        return "break"  # Stop event propagation
-    
-    tree.bind("<MouseWheel>", _on_tree_mousewheel)
-    tree.bind("<Shift-MouseWheel>", _on_tree_shift_mousewheel)
-    tree_container.bind("<MouseWheel>", _on_tree_mousewheel)
-    tree_container.bind("<Shift-MouseWheel>", _on_tree_shift_mousewheel)
-
-    # Populate rows in the same mapped order
-    checks: List[Tuple[str, Dict[str, str]]] = []
-    for row in rows_to_append:
-        values = [
-            row.get("帳號類型（Account Type）", ""),
-            row.get("帳號名稱（Account Name）", ""),
-            row.get("費用代碼（Expense Code）", ""),
-            row.get("Name", ""),
-            row.get("聯繫電話（Contact Phone）", ""),
-            row.get("部門（Department）", ""),
-            row.get("工號（Employee No）", ""),
-            row.get("郵箱（E-mail）", ""),
-            row.get("帳號Role（Account Role）", ""),
-            row.get("其他說明（Other Description）", ""),
-            row.get("CM remark", ""),
-            row.get("SR V9 file", ""),
-        ]
-        iid = tree.insert("", "end", values=values)
-        checks.append((iid, row))
-
-    # Summary label
-    if len(checks) > 0:
-        summary_text = f"✅ {len(checks)} NEW account(s) queued for creation"
-        summary_color = "#58a6ff"
-    else:
-        summary_text = f"⚠️ NO NEW accounts to create (all duplicates)"
-        summary_color = "#ff6b6b"
-    
-    ttk.Label(
-        main_frame,
-        text=summary_text,
-        font=("Consolas", 10, "bold"),
-        background="#0d1117",
-        foreground=summary_color,
-        anchor="w",
-    ).pack(fill="x", pady=(0, 15))
-
-    def confirm() -> None:
-        selected_rows = [row for _, row in checks]
-        employee_nos = [row.get("工號（Employee No）", "") for _, row in checks]
-        if not selected_rows:
-            messagebox.showwarning("QUEUE_EMPTY", "No accounts selected for creation.", parent=preview)
-            return
-        
-        # Check if any rows have empty "其他說明（Other Description）"
-        if empty_other_desc:
-            proceed = messagebox.askyesno(
-                "⚠️ EMPTY_OTHER_DESCRIPTION_WARNING",
-                f"⚠️ WARNING: {len(empty_other_desc)} employee ID(s) have no value in '其他說明（Other Description）':\n\n"
-                f"{', '.join(empty_other_desc)}\n\n"
-                f"Do you still want to proceed?",
-                parent=preview,
-                icon='warning'
-            )
-            if not proceed:
-                return
-
-        indicator = ttk.Label(
-            main_frame,
-            text="[PROCESSING] Updating consolidated database...",
-            font=("Consolas", 10, "bold"),
-            background="#0d1117",
-            foreground="#f79000",
-        )
-        indicator.pack(pady=5)
-        preview.update()
-
-        try:
-            append_to_consolidated(cons_path, selected_rows)
-            indicator.destroy()
-            messagebox.showinfo(
-                "BATCH_SUCCESS",
-                f"[SUCCESS] {len(selected_rows)} account(s) processed successfully.",
-                parent=preview,
-            )
-        except PermissionError:
-            indicator.destroy()
-            messagebox.showerror(
-                "FILE_LOCKED",
-                f"Cannot save to consolidated Excel file.\n\n"
-                f"Please close the file in Excel and try again.\n\n"
-                f"File: {cons_path}",
-                parent=preview
-            )
-            return
-        except Exception as e:
-            indicator.destroy()
-            messagebox.showerror(
-                "SAVE_ERROR",
-                f"Error saving to consolidated Excel:\n\n{str(e)}",
-                parent=preview
-            )
-            return
-
-        try:
-            ticket_no, ticket_img_path = prompt_ticket_details(preview)
-        except ValueError as exc:
-            messagebox.showerror("INPUT_ERROR", str(exc), parent=preview)
-            return
-
-        email_attach_paths = {
-            "user_file": user_excel_path,
-            "ticket_image": ticket_img_path if ticket_img_path else None,
-            "employee_nos": employee_nos,
-            "other_description_values": other_desc_map,
-            "ticket_no": ticket_no,
-            "follow_text": _extract_follow_text(other_desc_map, employee_nos),
-        }
-        send_sap_creation_email(email_attach_paths)
-        preview.destroy()
-        root.quit()  # Exit the mainloop after successful completion
-
-    # Close button handler to properly clean up
-    def on_closing():
-        preview.destroy()
-        root.quit()
-    
-    preview.protocol("WM_DELETE_WINDOW", on_closing)
-    
-    ttk.Button(main_frame, text="[EXECUTE] PROCESS_BATCH", command=confirm).pack(fill="x", pady=10)
-
-    # Window is already centered and sized, just finalize
-    preview.update_idletasks()
-    
-    # Make sure window is visible and on top
-    preview.deiconify()
-    preview.lift()
-    preview.focus_force()
-    preview.grab_set()
-    
-    # Make sure root window processes events
-    root.update()
-    
-    # Start the event loop - this will block until window is closed
-    root.mainloop()
-    
-    # Clean up after mainloop exits
-    try:
-        root.destroy()
-    except:
-        pass  # Window may already be destroyed
+    dialog.exec()
 
 
 @dataclass
@@ -849,5 +832,3 @@ def disable_sap_accounts(cons_path: str, employee_numbers: List[str]) -> Disable
     not_found = [emp_lookup[emp] for emp in remaining]
     
     return DisableResult(updated=updated, not_found=not_found)
-
-
